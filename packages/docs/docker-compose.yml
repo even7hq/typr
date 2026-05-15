@@ -1,0 +1,9 @@
+# Typr docs: Astro Starlight preview serving the static build.
+# No host port mapping by default; attach other services to this compose network or use `docker run -p` when needed.
+
+services:
+  typr-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Intentionally no `ports:` section.
