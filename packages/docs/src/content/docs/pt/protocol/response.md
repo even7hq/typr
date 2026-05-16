@@ -1,6 +1,8 @@
 ---
-title: Resposta
-description: Como o hospedeiro responde a envelopes REQUEST em NDJSON.
+title: Resposta e erro
+description: Como o hospedeiro responde a pedidos Typr em NDJSON.
 ---
 
-Deve repetir o mesmo `correlationId` do `REQUEST` correspondente. O resultado do prompt fica em `value` (tipo conforme o prompt).
+Em caso de sucesso, o hospedeiro envia `type: "response"` com o mesmo `id` do `request` correspondente. O resultado do procedimento fica em `result` (tipo conforme o `path`).
+
+Em caso de falha, o hospedeiro envia `type: "error"` com o mesmo `id` e um objeto `error` estruturado: `code`, `message` e `data` opcional.

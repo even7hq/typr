@@ -196,10 +196,17 @@ export class ClackAdapter extends AbstractAdapter {
      */
     public async autocompleteMultiselect(options: AutocompleteMultiselectPromptOptions): Promise<unknown> {
         const cleaned = stripAuto(options);
+
+        if (typeof cleaned.options === "function") {
+            return await clack.autocompleteMultiselect(cleaned);
+        }
+
+        const optionRows = cleaned.options;
+
         return await clack.autocompleteMultiselect({
             ...cleaned,
             options: ClackPromptMapper.mapSelectOptions(
-                cleaned.options.map((o) => ({
+                optionRows.map((o: (typeof optionRows)[number]) => ({
                     value: String(o.value),
                     label: String(o.label ?? o.value),
                     hint: o.hint,

@@ -12,7 +12,7 @@ Let the same app use a rich UI when a TTY is present while, without changing bus
 
 ## Supported languages
 
-- **TypeScript** (Node.js): reference implementation published as the `typr` npm package.
+- **TypeScript** (Node.js): reference implementation published as the **`@typr/js`** npm package (workspace `packages/js`).
 - **JavaScript** (Node.js): same package; artifacts as declared in the package `package.json`.
 
 Other languages may implement the NDJSON protocol below only; when an official SDK lives in this repository, it will be listed here.
@@ -24,37 +24,42 @@ An [Astro](https://astro.build/) + [Starlight](https://starlight.astro.build/) s
 ## Transport
 
 - One message per line, UTF-8, one JSON object per line (NDJSON).
-- In JSON mode, the CLI process writes envelopes to stdout and reads envelopes from stdin.
-- Use `correlationId` on every request that expects a response so it can be paired with the return line.
+- In JSON mode, the CLI process writes frames to stdout and reads frames from stdin.
+- Every frame carries `typr: 1` and `ts` (ISO 8601) so parsers can reject unknown protocol versions.
+- Pair RPC calls with responses using the same string `id` on `request`, `response`, and `error`.
 
-## Envelope kinds (`kind`)
+## Frame types (`type`)
 
-Uppercase string values:
+Lowercase string discriminant:
 
-| Value | Meaning |
-| --- | --- |
-| `REQUEST` | Request that requires a host response. |
-| `RESPONSE` | Response to the request sharing the same `correlationId`. |
-| `EVENT` | One-way notification (spinner, progress, log, intro, outro, etc.). |
-| `ERROR` | Structured failure with `code`, `message`, and optional `payload`. |
+| Value | Typical direction | Meaning |
+| --- | --- | --- |
+| `request` | CLI to host | RPC call with `id`, `path`, and optional `input`. |
+| `response` | Host to CLI | Success for the same `id` with optional `result`. |
+| `error` | Host to CLI | Failure for the same `id` with structured `error` (`code`, `message`, optional `data`). |
+| `event` | CLI to host | One-way notification (spinner, progress, log, intro, outro, and so on). |
 
-Suggested common fields: `timestamp` in ISO 8601 and `correlationId` when applicable.
+## RPC `request`
 
-## Prompt `REQUEST`
+The `path` field names the procedure with dot segments, for example `adapter.text` or `adapter.confirm`. The optional `input` object carries JSON-serializable arguments (the same shape the reference adapter used to put under `payload`).
 
-The `promptType` field identifies the prompt kind. The body lives in `payload` (object). Wire-friendly types used by the reference JS implementation include: `TEXT`, `PASSWORD`, `CONFIRM`, `DATE`, `MULTILINE`, `PATH`, `SELECT`, `SELECT_KEY`, `MULTISELECT`, `AUTOCOMPLETE`, `AUTOCOMPLETE_MULTISELECT`, `GROUP_MULTISELECT`, `TASKS`. Callback-driven prompts such as `GROUP` cannot be serialized over NDJSON and are rejected by the JSON transport. Dynamic autocomplete option suppliers (`options` as a function) are also rejected over NDJSON and in AUTO mode.
+Reference paths used by **`@typr/js`**: `adapter.text`, `adapter.password`, `adapter.confirm`, `adapter.date`, `adapter.multiline`, `adapter.path`, `adapter.select`, `adapter.selectKey`, `adapter.multiselect`, `adapter.autocomplete`, `adapter.autocompleteMultiselect`, `adapter.groupMultiselect`, `adapter.tasks`. Callback-heavy prompts such as `group` cannot run over NDJSON and are rejected by the JSON transport. Dynamic autocomplete option suppliers (`options` as a function) are also rejected over NDJSON and in AUTO mode.
 
 Payloads must be JSON-serializable; when using JSON transport, host-side validation replaces callback fields such as `validate`.
 
 Optional per-call `autoPolicy` overrides the default policy for automatic mode.
 
-## `RESPONSE`
+## `response`
 
-It must repeat the same `correlationId` as the matching `REQUEST`. The prompt result is in `value` (type depends on the prompt).
+It repeats the same `id` as the matching `request`. The procedure result is in `result` (type depends on the path).
 
-## `EVENT`
+## `error`
 
-The `event` field is uppercase, for example `SPINNER_START`, `SPINNER_MESSAGE`, `SPINNER_STOP`, `PROGRESS_START`, `PROGRESS_ADVANCE`, `PROGRESS_STOP`, `INTRO`, `OUTRO`, `NOTE`, `CANCEL`, `LOG`, `STREAM`. The `payload` holds event-specific data (for example `level`, `message`, and optional `label` for `LOG`, plus `channel`, `chunk`, optional `label`, and stream options for `STREAM`).
+It repeats the same `id` as the matching `request`. The host sends `error.code`, `error.message`, and optional `error.data`.
+
+## `event`
+
+Terminal notifications use `path: "terminal.emit"`, `name` in uppercase, for example `SPINNER_START`, `SPINNER_MESSAGE`, `SPINNER_STOP`, `PROGRESS_START`, `PROGRESS_ADVANCE`, `PROGRESS_STOP`, `INTRO`, `OUTRO`, `NOTE`, `CANCEL`, `LOG`, `STREAM`. The `payload` holds event-specific data (for example `level`, `message`, and optional `label` for `LOG`, plus `channel`, `chunk`, optional `label`, and stream options for `STREAM`). `cid` is optional for correlating streams.
 
 ## Runtime modes
 
@@ -79,4 +84,17 @@ Implementations in other languages should preserve these identifiers and this se
 
 ## Reference implementation
 
-The `typr` npm package corresponds to the TypeScript and JavaScript entries above (interactive adapters, NDJSON transport, timeline parser, and related utilities). Interactive rendering is pluggable; the bundled **Clack** backend maps to [`@clack/prompts`](https://github.com/bombshell-dev/clack/tree/main/packages/prompts) and is not required for other language SDKs.
+The **`@typr/js`** npm package corresponds to the TypeScript and JavaScript entries above (interactive adapters, NDJSON transport, timeline parser, and related utilities). Interactive rendering is pluggable; the bundled **Clack** backend maps to [`@clack/prompts`](https://github.com/bombshell-dev/clack/tree/main/packages/prompts) and is not required for other language SDKs.
+
+### Workspaces
+
+| Package | Role |
+| --- | --- |
+| `@typr/js` | Library under `packages/js` |
+| `@typr/docs` | Starlight site under `packages/docs` |
+
+Install dependencies with [nayr](https://github.com/callmeteus/nayr) from this directory: `nayr install` (writes `nayr.lock`). Yarn Classic can still run workspace scripts, for example `yarn build` and `yarn docs:dev`.
+
+### Migration from the `typr` package name
+
+The library workspace is now **`@typr/js`** (folder `packages/js`). Update `package.json` dependencies and TypeScript imports from `typr` to `@typr/js` when you consume this monorepo or a published tarball under the new name.

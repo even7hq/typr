@@ -1,17 +1,17 @@
 import readline from "node:readline";
 
 import { AbstractTransport } from "../../models/AbstractTransport";
-import { NDJSONEnvelope } from "../../types/ProtocolTypes";
-import { NDJSONLineCodec } from "./NDJSONLineCodec";
+import type { TyprWireMessage } from "../../types/ProtocolTypes";
+import { TyprWireCodec } from "./TyprWireCodec";
 
 /**
- * NDJSON transport over stdin and stdout.
+ * NDJSON transport over stdin and stdout for Typr wire frames.
  */
 export class NDJSONStdioTransport extends AbstractTransport {
     /**
      * Registered inbound handlers.
      */
-    private readonly handlers: Array<(envelope: NDJSONEnvelope) => void> = [];
+    private readonly handlers: Array<(message: TyprWireMessage) => void> = [];
 
     /**
      * Readline interface for stdin, when attached.
@@ -32,22 +32,22 @@ export class NDJSONStdioTransport extends AbstractTransport {
     }
 
     /**
-     * Sends an envelope as one NDJSON line to the output stream.
+     * Sends a wire message as one NDJSON line to the output stream.
      *
-     * @param envelope - Envelope to send.
+     * @param message - Wire message to send.
      * @returns Nothing.
      */
-    public send(envelope: NDJSONEnvelope): void {
-        this.output.write(NDJSONLineCodec.encode(envelope));
+    public send(message: TyprWireMessage): void {
+        this.output.write(TyprWireCodec.encode(message));
     }
 
     /**
-     * Registers a handler for inbound envelopes.
+     * Registers a handler for inbound wire messages.
      *
-     * @param handler - Callback invoked for each decoded line.
+     * @param handler - Handler called for each decoded message.
      * @returns Nothing.
      */
-    public onMessage(handler: (envelope: NDJSONEnvelope) => void): void {
+    public onMessage(handler: (message: TyprWireMessage) => void): void {
         this.handlers.push(handler);
         this.ensureReader();
     }
@@ -81,20 +81,20 @@ export class NDJSONStdioTransport extends AbstractTransport {
         });
 
         this.readlineInterface.on("line", (line) => {
-            let envelope: NDJSONEnvelope | null;
+            let message: TyprWireMessage | null;
 
             try {
-                envelope = NDJSONLineCodec.decode(line);
+                message = TyprWireCodec.decode(line);
             } catch {
                 return;
             }
 
-            if (!envelope) {
+            if (!message) {
                 return;
             }
 
             for (const handler of this.handlers) {
-                handler(envelope);
+                handler(message);
             }
         });
     }

@@ -1,8 +1,9 @@
-import { NDJSONEventEnvelope, NDJSONKind } from "../../types/ProtocolTypes";
+import { TYPR_WIRE_VERSION } from "../../types/ProtocolTypes";
+import type { TyprWireEvent } from "../../types/ProtocolTypes";
 import { ANSIStreamNormalizer } from "./ANSIStreamNormalizer";
 
 /**
- * Converts legacy stdout or stderr text into NDJSON log events.
+ * Converts legacy stdout or stderr text into Typr wire log events.
  */
 export class LogToNDJSONConverter {
     /**
@@ -13,16 +14,16 @@ export class LogToNDJSONConverter {
     /**
      * Creates a new log converter.
      *
-     * @param sink - Callback invoked for each NDJSON log event.
-     * @param correlationId - Optional correlation id attached to every event.
+     * @param sink - Callback invoked for each Typr wire log event.
+     * @param cid - Optional correlation id attached to every event.
      */
     constructor(
-        private readonly sink: (envelope: NDJSONEventEnvelope) => void,
-        private readonly correlationId?: string
+        private readonly sink: (message: TyprWireEvent) => void,
+        private readonly cid?: string
     ) {}
 
     /**
-     * Feeds a raw chunk and emits one NDJSON event per completed line.
+     * Feeds a raw chunk and emits one Typr wire event per completed line.
      *
      * @param chunk - Raw chunk from the child stream.
      * @param source - Stream source label.
@@ -51,7 +52,7 @@ export class LogToNDJSONConverter {
     }
 
     /**
-     * Emits a single NDJSON log event for one normalized line.
+     * Emits a single Typr wire event for one normalized line.
      *
      * @param message - Sanitized line text.
      * @param source - Stream source label.
@@ -60,18 +61,23 @@ export class LogToNDJSONConverter {
     private emitLine(message: string, source: "stdout" | "stderr"): void {
         const level = source === "stderr" ? "ERROR" : "INFO";
 
-        const envelope: NDJSONEventEnvelope = {
-            kind: NDJSONKind.EVENT,
-            timestamp: new Date().toISOString(),
-            correlationId: this.correlationId,
-            event: "LOG",
+        const evt: TyprWireEvent = {
+            typr: TYPR_WIRE_VERSION,
+            type: "event",
+            path: "terminal.emit",
+            name: "LOG",
             payload: {
                 level,
                 source,
                 message
-            }
+            },
+            ts: new Date().toISOString()
         };
 
-        this.sink(envelope);
+        if (this.cid) {
+            evt.cid = this.cid;
+        }
+
+        this.sink(evt);
     }
 }

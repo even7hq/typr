@@ -1,9 +1,21 @@
 {
-  "name": "typr",
+  "name": "@typr/js",
   "version": "1.0.0",
   "description": "Interaction protocol built for humans and terminals. JavaScript and TypeScript reference implementation.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/even7hq/luckymaker-workspace",
+    "directory": "typr/packages/js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "license": "UNLICENSED",
   "files": [
     "dist"

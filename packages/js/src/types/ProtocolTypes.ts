@@ -16,77 +16,177 @@ export enum AutoPolicy {
 }
 
 /**
- * NDJSON envelope kinds.
+ * Wire protocol version marker carried on every Typr NDJSON frame.
  */
-export enum NDJSONKind {
-    REQUEST = "REQUEST",
-    RESPONSE = "RESPONSE",
-    EVENT = "EVENT",
-    ERROR = "ERROR"
+export const TYPR_WIRE_VERSION = 1 as const;
+
+/**
+ * Discriminant for Typr RPC-style NDJSON frames.
+ */
+export type TyprWireType = "request" | "response" | "error" | "event";
+
+/**
+ * Shared fields for Typr wire frames.
+ */
+export interface TyprWireBase {
+    /**
+     * Protocol version marker. Must be {@link TYPR_WIRE_VERSION}.
+     */
+    typr: typeof TYPR_WIRE_VERSION;
+
+    /**
+     * Frame discriminant.
+     */
+    type: TyprWireType;
+
+    /**
+     * ISO-8601 timestamp for the frame.
+     */
+    ts: string;
 }
 
 /**
- * Base payload shared by all NDJSON messages.
+ * Procedure call request from the CLI process to the host (stdin).
  */
-export interface NDJSONBaseEnvelope {
-    /**
-     * Message kind.
-     */
-    kind: NDJSONKind;
+export interface TyprWireRequest extends TyprWireBase {
+    type: "request";
 
     /**
-     * Correlation key for request and response tracking.
+     * Correlates with {@link TyprWireResponse} / {@link TyprWireError}.
      */
-    correlationId?: string;
+    id: string;
 
     /**
-     * Message timestamp in ISO format.
+     * Dot-separated procedure path (for example `adapter.confirm`).
      */
-    timestamp: string;
+    path: string;
+
+    /**
+     * JSON-serializable input payload for the procedure.
+     */
+    input?: Record<string, unknown>;
 }
 
 /**
- * Prompt request message payload.
+ * Successful RPC result from the host to the CLI (stdout).
  */
-export interface NDJSONRequestEnvelope extends NDJSONBaseEnvelope {
-    kind: NDJSONKind.REQUEST;
-    promptType: string;
+export interface TyprWireResponse extends TyprWireBase {
+    type: "response";
+
+    /**
+     * Correlates with the originating {@link TyprWireRequest}.
+     */
+    id: string;
+
+    /**
+     * Result value produced by the host.
+     */
+    result?: unknown;
+}
+
+/**
+ * RPC failure from the host to the CLI (stdout).
+ */
+export interface TyprWireError extends TyprWireBase {
+    type: "error";
+
+    /**
+     * Correlates with the originating {@link TyprWireRequest}.
+     */
+    id: string;
+
+    /**
+     * Structured error payload.
+     */
+    error: {
+        code: string;
+        message: string;
+        data?: Record<string, unknown>;
+    };
+}
+
+/**
+ * One-way terminal event from the CLI to the host (stdout).
+ */
+export interface TyprWireEvent extends TyprWireBase {
+    type: "event";
+
+    /**
+     * Logical channel for the event (for example `terminal.emit`).
+     */
+    path: string;
+
+    /**
+     * Event name inside the channel (for example `LOG`, `SPINNER_START`).
+     */
+    name: string;
+
+    /**
+     * Event payload data.
+     */
     payload: Record<string, unknown>;
+
+    /**
+     * Optional correlation id for log streaming helpers.
+     */
+    cid?: string;
 }
 
 /**
- * Prompt response message payload.
+ * Union of all Typr wire frames exchanged as NDJSON lines.
  */
-export interface NDJSONResponseEnvelope extends NDJSONBaseEnvelope {
-    kind: NDJSONKind.RESPONSE;
-    value: unknown;
-}
+export type TyprWireMessage = TyprWireRequest | TyprWireResponse | TyprWireError | TyprWireEvent;
 
 /**
- * Event message payload used by logs, spinners, and progress notifications.
+ * Type guard for {@link TyprWireMessage}.
+ *
+ * @param value - Parsed JSON value from a line.
+ * @returns True when the value matches the Typr v1 wire contract.
  */
-export interface NDJSONEventEnvelope extends NDJSONBaseEnvelope {
-    kind: NDJSONKind.EVENT;
-    event: string;
-    payload: Record<string, unknown>;
-}
+export function isTyprWireMessage(value: unknown): value is TyprWireMessage {
+    if (!value || typeof value !== "object") {
+        return false;
+    }
 
-/**
- * Error message payload.
- */
-export interface NDJSONErrorEnvelope extends NDJSONBaseEnvelope {
-    kind: NDJSONKind.ERROR;
-    code: string;
-    message: string;
-    payload?: Record<string, unknown>;
-}
+    const v = value as Record<string, unknown>;
 
-/**
- * Union type for all supported NDJSON envelopes.
- */
-export type NDJSONEnvelope = (
-    | NDJSONRequestEnvelope
-    | NDJSONResponseEnvelope
-    | NDJSONEventEnvelope
-    | NDJSONErrorEnvelope
-);
+    if (v.typr !== TYPR_WIRE_VERSION) {
+        return false;
+    }
+
+    if (typeof v.type !== "string" || typeof v.ts !== "string") {
+        return false;
+    }
+
+    const t = v.type;
+
+    if (t === "request") {
+        return typeof v.id === "string" && typeof v.path === "string";
+    }
+
+    if (t === "response") {
+        return typeof v.id === "string";
+    }
+
+    if (t === "error") {
+        if (typeof v.id !== "string") {
+            return false;
+        }
+
+        const err = v.error;
+
+        if (!err || typeof err !== "object") {
+            return false;
+        }
+
+        const e = err as Record<string, unknown>;
+
+        return typeof e.code === "string" && typeof e.message === "string";
+    }
+
+    if (t === "event") {
+        return typeof v.path === "string" && typeof v.name === "string" && typeof v.payload === "object" && v.payload !== null;
+    }
+
+    return false;
+}

@@ -1,18 +1,17 @@
 import { EventEmitter } from "node:events";
 
 import { TimelineChannel } from "../events/TimelineEvents";
-import { NDJSONLineCodec } from "../transports/ndjson/NDJSONLineCodec";
-import {
-    NDJSONEnvelope,
-    NDJSONErrorEnvelope,
-    NDJSONEventEnvelope,
-    NDJSONKind,
-    NDJSONRequestEnvelope,
-    NDJSONResponseEnvelope
+import { TyprWireCodec } from "../transports/ndjson/TyprWireCodec";
+import type {
+    TyprWireError,
+    TyprWireEvent,
+    TyprWireMessage,
+    TyprWireRequest,
+    TyprWireResponse
 } from "../types/ProtocolTypes";
 
 /**
- * Parses NDJSON lines and emits timeline channel events.
+ * Parses Typr NDJSON lines and emits timeline channel events.
  */
 export class TimelineParser extends EventEmitter {
     /**
@@ -22,42 +21,42 @@ export class TimelineParser extends EventEmitter {
      * @returns Nothing.
      */
     public pushLine(line: string): void {
-        let envelope: NDJSONEnvelope | null;
+        let message: TyprWireMessage | null;
 
         try {
-            envelope = NDJSONLineCodec.decode(line);
+            message = TyprWireCodec.decode(line);
         } catch (err) {
             this.emit(TimelineChannel.ERROR, err);
             return;
         }
 
-        if (!envelope) {
+        if (!message) {
             return;
         }
 
-        switch (envelope.kind) {
-            case NDJSONKind.REQUEST: {
-                this.emit(TimelineChannel.REQUEST, envelope as NDJSONRequestEnvelope);
+        switch (message.type) {
+            case "request": {
+                this.emit(TimelineChannel.REQUEST, message as TyprWireRequest);
                 break;
             }
 
-            case NDJSONKind.RESPONSE: {
-                this.emit(TimelineChannel.RESPONSE, envelope as NDJSONResponseEnvelope);
+            case "response": {
+                this.emit(TimelineChannel.RESPONSE, message as TyprWireResponse);
                 break;
             }
 
-            case NDJSONKind.EVENT: {
-                this.emit(TimelineChannel.EVENT, envelope as NDJSONEventEnvelope);
+            case "event": {
+                this.emit(TimelineChannel.EVENT, message as TyprWireEvent);
                 break;
             }
 
-            case NDJSONKind.ERROR: {
-                this.emit(TimelineChannel.ERROR, envelope as NDJSONErrorEnvelope);
+            case "error": {
+                this.emit(TimelineChannel.ERROR, message as TyprWireError);
                 break;
             }
 
             default: {
-                this.emit(TimelineChannel.ERROR, new Error(`Unknown NDJSON kind: ${String((envelope as NDJSONEnvelope).kind)}`));
+                this.emit(TimelineChannel.ERROR, new Error(`Unknown Typr wire type: ${String((message as TyprWireMessage).type)}`));
             }
         }
     }

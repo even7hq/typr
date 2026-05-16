@@ -1,3 +1,5 @@
+export { isCancel } from "@clack/prompts";
+
 export { ClackAdapter } from "./adapters/clack";
 export { ClackPromptMapper } from "./adapters/clack/ClackPromptMapper";
 export { NDJSONPromptAdapter, NDJSONWirePayload } from "./adapters/ndjson";
@@ -5,6 +7,7 @@ export { AutoAdapter } from "./core/AutoAdapter";
 export { ModeResolver } from "./core/ModeResolver";
 export { TUIClient } from "./core/TUIClient";
 export { TUICanceledError } from "./errors/TUICanceledError";
+export { TyprWireRpcError } from "./errors/TyprWireRpcError";
 export { TimelineChannel } from "./events/TimelineEvents";
 export { FramedConsole } from "./helpers/FramedConsole";
 export { InteractiveMenuOptions, runInteractiveMenu } from "./helpers/InteractiveMenu";
@@ -14,19 +17,22 @@ export { TimelineParser } from "./parsers/TimelineParser";
 export {
     ANSIStreamNormalizer,
     LogToNDJSONConverter,
-    NDJSONLineCodec,
-    NDJSONStdioTransport
+    NDJSONStdioTransport,
+    TyprWireCodec
 } from "./transports/ndjson";
 export {
     AutoPolicy,
-    NDJSONBaseEnvelope,
-    NDJSONEnvelope,
-    NDJSONErrorEnvelope,
-    NDJSONEventEnvelope,
-    NDJSONKind,
-    NDJSONRequestEnvelope,
-    NDJSONResponseEnvelope,
-    RuntimeMode
+    isTyprWireMessage,
+    RuntimeMode,
+    TYPR_WIRE_VERSION
+} from "./types/ProtocolTypes";
+export type {
+    TyprWireError,
+    TyprWireEvent,
+    TyprWireMessage,
+    TyprWireRequest,
+    TyprWireResponse,
+    TyprWireType
 } from "./types/ProtocolTypes";
 export type {
     AutocompleteMultiselectPromptOptions,

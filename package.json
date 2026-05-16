@@ -7,7 +7,8 @@
     "packages/docs"
   ],
   "scripts": {
-    "build": "yarn workspace typr build",
+    "build": "yarn workspace @typr/js build",
+    "build:all": "yarn workspace @typr/js build && yarn workspace @typr/docs build",
     "docs:dev": "yarn workspace @typr/docs dev",
     "docs:build": "yarn workspace @typr/docs build",
     "docs:preview": "yarn workspace @typr/docs preview"

@@ -11,7 +11,7 @@ Let the same app use a rich UI when a TTY is present while, without changing bus
 
 ## Supported languages
 
-- **TypeScript** (Node.js): reference implementation published as the `typr` npm package.
+- **TypeScript** (Node.js): reference implementation published as the **`@typr/js`** npm package (workspace `packages/js`).
 - **JavaScript** (Node.js): same package; artifacts as declared in the package `package.json`.
 
 Other languages may implement the NDJSON protocol below only; when an official SDK lives in this repository, it will be listed here.

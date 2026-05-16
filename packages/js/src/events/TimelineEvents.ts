@@ -3,22 +3,22 @@
  */
 export namespace TimelineChannel {
     /**
-     * Emitted for NDJSON event envelopes.
+     * Emitted for Typr wire `event` frames.
      */
     export const EVENT = "timeline:event";
 
     /**
-     * Emitted for NDJSON request envelopes.
+     * Emitted for Typr wire `request` frames.
      */
     export const REQUEST = "timeline:request";
 
     /**
-     * Emitted for NDJSON response envelopes.
+     * Emitted for Typr wire `response` frames.
      */
     export const RESPONSE = "timeline:response";
 
     /**
-     * Emitted for NDJSON error envelopes or decode failures.
+     * Emitted for Typr wire `error` frames or decode failures.
      */
     export const ERROR = "timeline:error";
 }

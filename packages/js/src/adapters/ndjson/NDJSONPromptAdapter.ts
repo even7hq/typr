@@ -2,13 +2,15 @@ import { randomUUID } from "node:crypto";
 
 import { AbstractAdapter } from "../../models/AbstractAdapter";
 import { TUICanceledError } from "../../errors/TUICanceledError";
+import { TyprWireRpcError } from "../../errors/TyprWireRpcError";
 import { NDJSONStdioTransport } from "../../transports/ndjson/NDJSONStdioTransport";
 import {
-    NDJSONEventEnvelope,
-    NDJSONEnvelope,
-    NDJSONKind,
-    NDJSONRequestEnvelope,
-    NDJSONResponseEnvelope
+    TYPR_WIRE_VERSION,
+    type TyprWireError,
+    type TyprWireEvent,
+    type TyprWireMessage,
+    type TyprWireRequest,
+    type TyprWireResponse
 } from "../../types/ProtocolTypes";
 import type {
     AutocompleteMultiselectPromptOptions,
@@ -44,10 +46,10 @@ import {
 import { NDJSONWirePayload } from "./NDJSONWirePayload";
 
 /**
- * Prompt adapter that serializes interactions as NDJSON request and response pairs.
+ * Prompt adapter that serializes interactions as Typr wire RPC requests and terminal events.
  */
 export class NDJSONPromptAdapter extends AbstractAdapter {
-    private readonly pending = new Map<string, (value: unknown) => void>();
+    private readonly pending = new Map<string, { resolve: (value: unknown) => void; reject: (reason: unknown) => void }>();
 
     private _log: TerminalAdapterLog | undefined;
 
@@ -58,76 +60,84 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      */
     constructor(private readonly transport: NDJSONStdioTransport) {
         super();
-        this.transport.onMessage((envelope) => this.onInbound(envelope));
+        this.transport.onMessage((message) => this.onInbound(message));
     }
 
     /**
-     * Handles inbound envelopes from stdin.
+     * Handles inbound wire messages from stdin.
      *
-     * @param envelope - Parsed NDJSON envelope.
+     * @param message - Parsed Typr wire message.
      * @returns Nothing.
      */
-    private onInbound(envelope: NDJSONEnvelope): void {
-        if (envelope.kind !== NDJSONKind.RESPONSE) {
+    private onInbound(message: TyprWireMessage): void {
+        if (message.type === "response") {
+            const response = message as TyprWireResponse;
+            const entry = this.pending.get(response.id);
+
+            if (!entry) {
+                return;
+            }
+
+            this.pending.delete(response.id);
+            entry.resolve(response.result);
             return;
         }
 
-        const response = envelope as NDJSONResponseEnvelope;
-        const correlationId = response.correlationId;
+        if (message.type === "error") {
+            const err = message as TyprWireError;
+            const entry = this.pending.get(err.id);
 
-        if (!correlationId) {
-            return;
+            if (!entry) {
+                return;
+            }
+
+            this.pending.delete(err.id);
+            entry.reject(new TyprWireRpcError(err.error.code, err.error.message, err.error.data));
         }
-
-        const resolve = this.pending.get(correlationId);
-
-        if (!resolve) {
-            return;
-        }
-
-        this.pending.delete(correlationId);
-        resolve(response.value);
     }
 
     /**
-     * Emits a structured event envelope on stdout.
+     * Emits a structured terminal event on stdout.
      *
-     * @param event - Event name in uppercase.
+     * @param name - Event name (for example `LOG`, `SPINNER_START`).
      * @param payload - Event payload data.
      * @returns Nothing.
      */
-    private emitEvent(event: string, payload: Record<string, unknown>): void {
-        const envelope: NDJSONEventEnvelope = {
-            kind: NDJSONKind.EVENT,
-            timestamp: new Date().toISOString(),
-            event,
-            payload
+    private emitEvent(name: string, payload: Record<string, unknown>): void {
+        const evt: TyprWireEvent = {
+            typr: TYPR_WIRE_VERSION,
+            type: "event",
+            path: "terminal.emit",
+            name,
+            payload,
+            ts: new Date().toISOString()
         };
 
-        this.transport.send(envelope);
+        this.transport.send(evt);
     }
 
     /**
-     * Sends a request envelope and waits for a matching response envelope.
+     * Sends an RPC request and waits for a matching response or error frame.
      *
-     * @param promptType - Prompt discriminator for hosts.
-     * @param payload - Prompt payload data.
-     * @returns Resolved value from the host.
+     * @param path - Dot-separated procedure path (for example `adapter.confirm`).
+     * @param input - JSON-serializable input payload.
+     * @returns Resolved result from the host.
      */
-    private async request(promptType: string, payload: Record<string, unknown>): Promise<unknown> {
-        const correlationId = randomUUID();
-        const envelope: NDJSONRequestEnvelope = {
-            kind: NDJSONKind.REQUEST,
-            correlationId,
-            timestamp: new Date().toISOString(),
-            promptType,
-            payload
+    private async rpc(path: string, input: Record<string, unknown>): Promise<unknown> {
+        const id = randomUUID();
+        const req: TyprWireRequest = {
+            typr: TYPR_WIRE_VERSION,
+            type: "request",
+            id,
+            path,
+            input,
+            ts: new Date().toISOString()
         };
 
-        this.transport.send(envelope);
+        this.transport.send(req);
 
-        return await new Promise((resolve) => {
-            this.pending.set(correlationId, resolve);
+        return await new Promise((resolve, reject) => {
+            this.pending.set(id, { resolve, reject });
         });
     }
 
@@ -136,7 +146,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided string value.
      */
     public async text(options: TextPromptOptions): Promise<unknown> {
-        return await this.request("TEXT", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.text", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -144,7 +154,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided string value.
      */
     public async password(options: PasswordPromptOptions): Promise<unknown> {
-        return await this.request("PASSWORD", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.password", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -152,7 +162,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided boolean value.
      */
     public async confirm(options: ConfirmPromptOptions): Promise<unknown> {
-        return await this.request("CONFIRM", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.confirm", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -160,7 +170,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided date value.
      */
     public async date(options: DatePromptOptions): Promise<unknown> {
-        return await this.request("DATE", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.date", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -168,7 +178,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided string value.
      */
     public async multiline(options: MultilinePromptOptions): Promise<unknown> {
-        return await this.request("MULTILINE", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.multiline", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -176,7 +186,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided string value.
      */
     public async path(options: PathPromptOptions): Promise<unknown> {
-        return await this.request("PATH", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.path", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -184,7 +194,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided option value.
      */
     public async select(options: SelectPromptOptions): Promise<unknown> {
-        return await this.request("SELECT", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.select", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -192,7 +202,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided option value.
      */
     public async selectKey(options: SelectKeyPromptOptions): Promise<unknown> {
-        return await this.request("SELECT_KEY", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.selectKey", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -200,7 +210,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided values.
      */
     public async multiselect(options: MultiselectPromptOptions): Promise<unknown> {
-        return await this.request("MULTISELECT", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.multiselect", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -212,7 +222,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
             throw new TUICanceledError("AUTOCOMPLETE_DYNAMIC_OPTIONS_UNSUPPORTED_JSON");
         }
 
-        return await this.request("AUTOCOMPLETE", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.autocomplete", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -220,7 +230,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided values.
      */
     public async autocompleteMultiselect(options: AutocompleteMultiselectPromptOptions): Promise<unknown> {
-        return await this.request("AUTOCOMPLETE_MULTISELECT", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.autocompleteMultiselect", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -228,7 +238,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Host provided values.
      */
     public async groupMultiselect(options: GroupMultiselectPromptOptions): Promise<unknown> {
-        return await this.request("GROUP_MULTISELECT", NDJSONWirePayload.fromOptions(options));
+        return await this.rpc("adapter.groupMultiselect", NDJSONWirePayload.fromOptions(options));
     }
 
     /**
@@ -247,7 +257,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      */
     public async tasks(tasks: TaskRunnerItem[], opts?: SessionCommonOptions): Promise<void> {
         const items = tasks.map((t) => ({ title: t.title, enabled: t.enabled }));
-        await this.request("TASKS", {
+        await this.rpc("adapter.tasks", {
             items,
             opts: NDJSONWirePayload.fromOptions({ ...(opts ?? {}) })
         });
@@ -255,7 +265,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
 
     /**
      * @param options - Task log options.
-     * @returns Task log proxy emitting NDJSON events.
+     * @returns Task log proxy emitting terminal events.
      */
     public taskLog(options: TaskLogFactoryOptions): TUITaskLogHandle {
         const id = randomUUID();
@@ -292,7 +302,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
 
     /**
      * @param opts - Optional spinner options.
-     * @returns Spinner proxy emitting NDJSON events.
+     * @returns Spinner proxy emitting terminal events.
      */
     public spinner(opts?: SpinnerFactoryOptions): TUISpinner {
         const id = randomUUID();
@@ -331,7 +341,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
 
     /**
      * @param options - Progress options.
-     * @returns Progress proxy emitting NDJSON events.
+     * @returns Progress proxy emitting terminal events.
      */
     public progress(options: ProgressPromptOptions): TUIProgress {
         const id = randomUUID();
@@ -419,7 +429,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @returns NDJSON backed logger emitting `LOG` and `STREAM` events.
+     * @returns Wire-backed logger emitting `LOG` and `STREAM` terminal events.
      */
     public get log(): TerminalAdapterLog {
         if (!this._log) {
@@ -430,7 +440,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * Builds the logger surface emitting NDJSON events.
+     * Builds the logger surface emitting terminal events.
      *
      * @returns Terminal logger implementation.
      */

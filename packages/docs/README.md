@@ -8,7 +8,10 @@ From the Typr monorepo root:
 
 ```bash
 yarn docs:dev
+yarn build:all
 ```
+
+`yarn build:all` compiles **`@typr/js`** then builds this site (**`@typr/docs`**). Install dependencies with **nayr** at the monorepo root (`nayr install`) when using `nayr.lock`.
 
 From this package:
 

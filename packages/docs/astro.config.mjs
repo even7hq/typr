@@ -26,9 +26,9 @@ export default defineConfig({
           label: "Protocol",
           items: [
             { label: "Transport", link: "/protocol/transport/" },
-            { label: "Envelope kinds", link: "/protocol/envelopes/" },
-            { label: "Prompt requests", link: "/protocol/prompt-requests/" },
-            { label: "Response", link: "/protocol/response/" },
+            { label: "Wire frames", link: "/protocol/envelopes/" },
+            { label: "RPC requests", link: "/protocol/prompt-requests/" },
+            { label: "Response and error", link: "/protocol/response/" },
             { label: "Events", link: "/protocol/events/" }
           ]
         },

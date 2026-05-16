@@ -1,9 +1,11 @@
 ---
-title: Pedidos de prompt
-description: Valores de promptType e payloads serializáveis em JSON no modo NDJSON.
+title: Pedidos RPC
+description: Campos path e input para procedimentos do adaptador no modo NDJSON.
 ---
 
-O campo `promptType` identifica o tipo de prompt. O corpo útil fica em `payload` (objeto). Tipos usados pela implementação JS de referência incluem: `TEXT`, `PASSWORD`, `CONFIRM`, `DATE`, `MULTILINE`, `PATH`, `SELECT`, `SELECT_KEY`, `MULTISELECT`, `AUTOCOMPLETE`, `AUTOCOMPLETE_MULTISELECT`, `GROUP_MULTISELECT`, `TASKS`. Prompts como `GROUP`, que dependem de funções no cliente, não são suportados em NDJSON. Autocomplete com `options` como função também é rejeitado em NDJSON e no modo AUTO.
+O campo `path` nomeia o procedimento com segmentos separados por ponto, por exemplo `adapter.text` ou `adapter.confirm`. O objeto opcional `input` leva argumentos serializáveis em JSON.
+
+Caminhos de referência usados pelo **`@typr/js`**: `adapter.text`, `adapter.password`, `adapter.confirm`, `adapter.date`, `adapter.multiline`, `adapter.path`, `adapter.select`, `adapter.selectKey`, `adapter.multiselect`, `adapter.autocomplete`, `adapter.autocompleteMultiselect`, `adapter.groupMultiselect`, `adapter.tasks`. Prompts como `group`, que dependem de funções no cliente, não rodam em NDJSON. Autocomplete com `options` como função também é rejeitado em NDJSON e no modo AUTO.
 
 Payloads devem ser serializáveis em JSON; em transporte JSON, validações do tipo `validate` ficam a cargo do hospedeiro.
 

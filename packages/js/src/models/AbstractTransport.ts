@@ -1,24 +1,24 @@
-import { NDJSONEnvelope } from "../types/ProtocolTypes";
+import type { TyprWireMessage } from "../types/ProtocolTypes";
 
 /**
- * Base transport abstraction for NDJSON communication.
+ * Base transport abstraction for Typr NDJSON wire communication.
  */
 export abstract class AbstractTransport {
     /**
-     * Sends an envelope through the transport channel.
+     * Sends a wire message through the transport channel.
      *
-     * @param envelope - Envelope to send.
+     * @param message - Wire message to send.
      * @returns Nothing.
      */
-    abstract send(envelope: NDJSONEnvelope): void;
+    abstract send(message: TyprWireMessage): void;
 
     /**
-     * Subscribes to incoming envelopes.
+     * Subscribes to incoming wire messages.
      *
-     * @param handler - Handler called for each decoded envelope.
+     * @param handler - Handler called for each decoded message.
      * @returns Nothing.
      */
-    abstract onMessage(handler: (envelope: NDJSONEnvelope) => void): void;
+    abstract onMessage(handler: (message: TyprWireMessage) => void): void;
 
     /**
      * Releases all transport resources.
