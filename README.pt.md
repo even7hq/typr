@@ -12,7 +12,7 @@ Permitir que a mesma aplicação rode com UI rica quando há TTY e, sem mudar a 
 
 ## Linguagens suportadas
 
-- **TypeScript** (Node.js): implementação de referência publicada como **`@typr/js`** no npm (workspace `packages/js`).
+- **TypeScript** (Node.js): implementação de referência publicada como **`@even7hq/js`** no npm (workspace `packages/js`).
 - **JavaScript** (Node.js): o mesmo pacote; artefatos conforme o `package.json` do pacote.
 
 Outras linguagens podem implementar só o protocolo NDJSON abaixo; quando houver SDK oficial neste repositório, será listado aqui.
@@ -43,7 +43,7 @@ Discriminante em string minúscula:
 
 O campo `path` nomeia o procedimento com segmentos separados por ponto, por exemplo `adapter.text` ou `adapter.confirm`. O objeto opcional `input` leva argumentos serializáveis em JSON (o mesmo formato que a implementação de referência antigamente colocava em `payload`).
 
-Caminhos de referência usados pelo **`@typr/js`**: `adapter.text`, `adapter.password`, `adapter.confirm`, `adapter.date`, `adapter.multiline`, `adapter.path`, `adapter.select`, `adapter.selectKey`, `adapter.multiselect`, `adapter.autocomplete`, `adapter.autocompleteMultiselect`, `adapter.groupMultiselect`, `adapter.tasks`. Prompts como `group`, que dependem de funções no cliente, não rodam em NDJSON. Autocomplete com `options` como função também é rejeitado em NDJSON e no modo AUTO.
+Caminhos de referência usados pelo **`@even7hq/js`**: `adapter.text`, `adapter.password`, `adapter.confirm`, `adapter.date`, `adapter.multiline`, `adapter.path`, `adapter.select`, `adapter.selectKey`, `adapter.multiselect`, `adapter.autocomplete`, `adapter.autocompleteMultiselect`, `adapter.groupMultiselect`, `adapter.tasks`. Prompts como `group`, que dependem de funções no cliente, não rodam em NDJSON. Autocomplete com `options` como função também é rejeitado em NDJSON e no modo AUTO.
 
 Payloads devem ser serializáveis em JSON; em transporte JSON, validações do tipo `validate` ficam a cargo do hospedeiro.
 
@@ -84,17 +84,17 @@ Implementações em outras linguagens devem preservar estes identificadores e es
 
 ## Implementação de referência
 
-O pacote npm **`@typr/js`** corresponde às entradas TypeScript e JavaScript acima (adaptadores interativos, transporte NDJSON, parser de timeline e utilitários relacionados). A renderização interativa é plugável; o backend **Clack** empacotado mapeia para [`@clack/prompts`](https://github.com/bombshell-dev/clack/tree/main/packages/prompts) e não é obrigatório para SDKs noutras linguagens.
+O pacote npm **`@even7hq/js`** corresponde às entradas TypeScript e JavaScript acima (adaptadores interativos, transporte NDJSON, parser de timeline e utilitários relacionados). A renderização interativa é plugável; o backend **Clack** empacotado mapeia para [`@clack/prompts`](https://github.com/bombshell-dev/clack/tree/main/packages/prompts) e não é obrigatório para SDKs noutras linguagens.
 
 ### Workspaces
 
 | Pacote | Função |
 | --- | --- |
-| `@typr/js` | Biblioteca em `packages/js` |
-| `@typr/docs` | Site Starlight em `packages/docs` |
+| `@even7hq/js` | Biblioteca em `packages/js` |
+| `@even7hq/docs` | Site Starlight em `packages/docs` |
 
 Instale dependências com [nayr](https://github.com/callmeteus/nayr) neste diretório: `nayr install` (gera `nayr.lock`). O Yarn Classic ainda pode correr scripts de workspace, por exemplo `yarn build` e `yarn docs:dev`.
 
 ### Migração a partir do nome de pacote `typr`
 
-O workspace da biblioteca passou a ser **`@typr/js`** (pasta `packages/js`). Atualize dependências em `package.json` e imports em TypeScript de `typr` para `@typr/js` quando consumir este monorepo ou um tarball publicado com o novo nome.
+O workspace da biblioteca passou a ser **`@even7hq/js`** (pasta `packages/js`). Atualize dependências em `package.json` e imports em TypeScript de `typr` para `@even7hq/js` quando consumir este monorepo ou um tarball publicado com o novo nome.

@@ -32,7 +32,7 @@ import {
     type TerminalAdapterLog
 } from "../../types/AdapterLog";
 import type { TUITaskLogHandle, TUIProgress, TUISpinner } from "../../types/TUITypes";
-import { ClackPromptMapper } from "./ClackPromptMapper";
+import { ClackPromptMapper, type SelectOptionLike } from "./ClackPromptMapper";
 
 /**
  * Strips Typr-only fields before forwarding options to @clack/prompts.
@@ -117,14 +117,7 @@ export class ClackAdapter extends AbstractAdapter {
         const cleaned = stripAuto(options);
         return await clack.select({
             ...cleaned,
-            options: ClackPromptMapper.mapSelectOptions(
-                cleaned.options.map((o) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            )
+            options: ClackPromptMapper.mapSelectOptions(cleaned.options as ReadonlyArray<SelectOptionLike>)
         });
     }
 
@@ -136,14 +129,7 @@ export class ClackAdapter extends AbstractAdapter {
         const cleaned = stripAuto(options);
         return await clack.selectKey({
             ...cleaned,
-            options: ClackPromptMapper.mapSelectOptions(
-                cleaned.options.map((o) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            )
+            options: ClackPromptMapper.mapSelectOptions(cleaned.options as ReadonlyArray<SelectOptionLike>)
         });
     }
 
@@ -155,14 +141,7 @@ export class ClackAdapter extends AbstractAdapter {
         const cleaned = stripAuto(options);
         return await clack.multiselect({
             ...cleaned,
-            options: ClackPromptMapper.mapSelectOptions(
-                cleaned.options.map((o) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            )
+            options: ClackPromptMapper.mapSelectOptions(cleaned.options as ReadonlyArray<SelectOptionLike>)
         });
     }
 
@@ -179,14 +158,7 @@ export class ClackAdapter extends AbstractAdapter {
 
         return await clack.autocomplete({
             ...cleaned,
-            options: ClackPromptMapper.mapSelectOptions(
-                cleaned.options.map((o) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            )
+            options: ClackPromptMapper.mapSelectOptions(cleaned.options as ReadonlyArray<SelectOptionLike>)
         });
     }
 
@@ -205,14 +177,7 @@ export class ClackAdapter extends AbstractAdapter {
 
         return await clack.autocompleteMultiselect({
             ...cleaned,
-            options: ClackPromptMapper.mapSelectOptions(
-                optionRows.map((o: (typeof optionRows)[number]) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            )
+            options: ClackPromptMapper.mapSelectOptions(optionRows as ReadonlyArray<SelectOptionLike>)
         });
     }
 
@@ -226,14 +191,7 @@ export class ClackAdapter extends AbstractAdapter {
 
         for (const key of Object.keys(cleaned.options)) {
             const list = cleaned.options[key] ?? [];
-            mapped[key] = ClackPromptMapper.mapSelectOptions(
-                list.map((o) => ({
-                    value: String(o.value),
-                    label: String(o.label ?? o.value),
-                    hint: o.hint,
-                    disabled: o.disabled
-                }))
-            );
+            mapped[key] = ClackPromptMapper.mapSelectOptions(list as ReadonlyArray<SelectOptionLike>);
         }
 
         return await clack.groupMultiselect({

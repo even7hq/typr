@@ -23,6 +23,7 @@ import type {
     TaskRunnerItem,
     TextPromptOptions
 } from "../types/ClackBackedOptions";
+import type { SelectOptionLike } from "../adapters/clack/ClackPromptMapper";
 import type { NoteSessionOptions } from "../types/ClackBackedOptions";
 import type {
     AdapterLogLine,
@@ -328,7 +329,7 @@ export class AutoAdapter extends AbstractAdapter {
         }
 
         if (this.policy === AutoPolicy.ALWAYS_YES) {
-            return options.options.map((o) => String(o.value));
+            return (options.options as ReadonlyArray<SelectOptionLike>).map((o) => String(o.value));
         }
 
         return [];
@@ -365,8 +366,9 @@ export class AutoAdapter extends AbstractAdapter {
 
         if (this.policy === AutoPolicy.ALWAYS_YES) {
             const all: string[] = [];
+            const grouped = options.options as Record<string, ReadonlyArray<SelectOptionLike>>;
 
-            for (const list of Object.values(options.options)) {
+            for (const list of Object.values(grouped)) {
                 for (const o of list) {
                     all.push(String(o.value));
                 }

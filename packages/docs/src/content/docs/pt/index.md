@@ -11,7 +11,7 @@ Permitir que a mesma aplicação rode com UI rica quando há TTY e, sem mudar a 
 
 ## Linguagens suportadas
 
-- **TypeScript** (Node.js): implementação de referência publicada como **`@typr/js`** no npm (workspace `packages/js`).
+- **TypeScript** (Node.js): implementação de referência publicada como **`@even7hq/js`** no npm (workspace `packages/js`).
 - **JavaScript** (Node.js): o mesmo pacote; artefatos conforme o `package.json` do pacote.
 
 Outras linguagens podem implementar só o protocolo NDJSON abaixo; quando houver SDK oficial neste repositório, será listado aqui.

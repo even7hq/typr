@@ -1,4 +1,14 @@
 /**
+ * Minimal select-row shape accepted by {@link mapSelectOptions}.
+ */
+export type SelectOptionLike = {
+    value: unknown;
+    label?: unknown;
+    hint?: unknown;
+    disabled?: unknown;
+};
+
+/**
  * Maps shared option shapes into @clack/prompts option arrays.
  */
 export namespace ClackPromptMapper {
@@ -9,18 +19,13 @@ export namespace ClackPromptMapper {
      * @returns Clack compatible option list.
      */
     export function mapSelectOptions(
-        options: ReadonlyArray<{
-            value: string;
-            label?: string;
-            hint?: string;
-            disabled?: boolean;
-        }>
+        options: ReadonlyArray<SelectOptionLike>
     ) {
-        return options.map((option) => ({
-            value: option.value,
-            label: option.label ?? option.value,
-            hint: option.hint ?? "",
-            ...(option.disabled === undefined ? {} : { disabled: option.disabled })
+        return options.map((option: SelectOptionLike) => ({
+            value: String(option.value),
+            label: String(option.label ?? option.value),
+            hint: option.hint === undefined || option.hint === null ? "" : String(option.hint),
+            ...(option.disabled === undefined ? {} : { disabled: Boolean(option.disabled) })
         }));
     }
 }

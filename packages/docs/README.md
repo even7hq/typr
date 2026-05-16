@@ -11,7 +11,7 @@ yarn docs:dev
 yarn build:all
 ```
 
-`yarn build:all` compiles **`@typr/js`** then builds this site (**`@typr/docs`**). Install dependencies with **nayr** at the monorepo root (`nayr install`) when using `nayr.lock`.
+`yarn build:all` compiles **`@even7hq/js`** then builds this site (**`@even7hq/docs`**). Install dependencies with **nayr** at the monorepo root (`nayr install`) when using `nayr.lock`.
 
 From this package:
 

@@ -1,5 +1,6 @@
 {
   "name": "typr",
+  "version": "1.0.0",
   "private": true,
   "description": "Interaction protocol built for humans and terminals. Monorepo workspace.",
   "workspaces": [
@@ -7,11 +8,11 @@
     "packages/docs"
   ],
   "scripts": {
-    "build": "yarn workspace @typr/js build",
-    "build:all": "yarn workspace @typr/js build && yarn workspace @typr/docs build",
-    "docs:dev": "yarn workspace @typr/docs dev",
-    "docs:build": "yarn workspace @typr/docs build",
-    "docs:preview": "yarn workspace @typr/docs preview"
+    "build": "yarn workspace @even7hq/js build",
+    "build:all": "yarn workspace @even7hq/js build && yarn workspace @even7hq/docs build",
+    "docs:dev": "yarn workspace @even7hq/docs dev",
+    "docs:build": "yarn workspace @even7hq/docs build",
+    "docs:preview": "yarn workspace @even7hq/docs preview"
   },
   "license": "UNLICENSED"
 }

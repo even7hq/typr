@@ -1,11 +1,11 @@
 {
-  "name": "@typr/js",
+  "name": "@even7hq/js",
   "version": "1.0.0",
   "description": "Interaction protocol built for humans and terminals. JavaScript and TypeScript reference implementation.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/even7hq/luckymaker-workspace",
-    "directory": "typr/packages/js"
+    "url": "https://github.com/even7hq/typr.git",
+    "directory": "packages/js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
