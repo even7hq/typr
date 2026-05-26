@@ -29,5 +29,6 @@
     "docs:build": "yarn workspace @typr/docs build",
     "docs:preview": "yarn workspace @typr/docs preview"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "private": true
 }
