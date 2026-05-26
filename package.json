@@ -1,15 +1,30 @@
 {
-  "name": "typr",
+  "name": "@typr/js",
   "version": "1.0.0",
-  "private": true,
-  "description": "Interaction protocol built for humans and terminals. Monorepo workspace.",
+  "description": "Interaction protocol built for humans and terminals.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/even7hq/typr.git"
+  },
+  "main": "./packages/js/dist/index.js",
+  "types": "./packages/js/dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./packages/js/dist/index.d.ts",
+      "import": "./packages/js/dist/index.js",
+      "require": "./packages/js/dist/index.js"
+    }
+  },
+  "files": [
+    "packages/js/dist"
+  ],
   "workspaces": [
     "packages/js",
     "packages/docs"
   ],
   "scripts": {
-    "build": "yarn workspace @typr/js build",
-    "build:all": "yarn workspace @typr/js build && yarn workspace @typr/docs build",
+    "build": "yarn workspace @typr/js-src build",
+    "build:all": "yarn workspace @typr/js-src build && yarn workspace @typr/docs build",
     "docs:dev": "yarn workspace @typr/docs dev",
     "docs:build": "yarn workspace @typr/docs build",
     "docs:preview": "yarn workspace @typr/docs preview"
