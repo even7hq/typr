@@ -25,6 +25,9 @@
   "scripts": {
     "build": "yarn workspace @typr/js-src build",
     "build:all": "yarn workspace @typr/js-src build && yarn workspace @typr/docs build",
+    "lint": "yarn workspace @typr/js-src lint",
+    "lint:fix": "yarn workspace @typr/js-src lint:fix",
+    "test": "yarn workspace @typr/js-src test",
     "docs:dev": "yarn workspace @typr/docs dev",
     "docs:build": "yarn workspace @typr/docs build",
     "docs:preview": "yarn workspace @typr/docs preview"
