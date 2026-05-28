@@ -1,6 +1,7 @@
 import { ClackAdapter } from "../adapters/clack";
 import type { AbstractAdapter } from "../models/AbstractAdapter";
 import type {
+    AutocompletePromptOptions,
     BoxPromptOptions,
     ConfirmPromptOptions,
     MultiselectPromptOptions,
@@ -135,6 +136,14 @@ export function select(options: SelectPromptOptions): Promise<unknown> {
  */
 export function multiselect(options: MultiselectPromptOptions): Promise<unknown> {
     return getGlobalAdapter().multiselect(options);
+}
+
+/**
+ * @param options - Autocomplete prompt options.
+ * @returns Selected value(s) or symbol cancel value.
+ */
+export function autocomplete(options: AutocompletePromptOptions): Promise<unknown> {
+    return getGlobalAdapter().autocomplete(options);
 }
 
 /**

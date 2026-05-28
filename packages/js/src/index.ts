@@ -1,6 +1,7 @@
 export { isCancel } from "@clack/prompts";
 
 export {
+    autocomplete,
     box,
     cancel,
     confirm,
@@ -34,6 +35,13 @@ export {
 export type { InterruptPolicy } from "./types/InterruptPolicy";
 export { StreamLineBuffer, type StreamLineHandlers } from "./helpers/StreamLineBuffer";
 export { TerminalOverlay } from "./helpers/TerminalOverlay";
+export {
+    TerminalLogger,
+    type TerminalLoggerFileSink,
+    type TerminalLoggerOptions,
+    type TerminalLoggerSpinner,
+    type TerminalLogLevel
+} from "./helpers/TerminalLogger";
 export { loadClack } from "./helpers/ClackLoader";
 export {
     PinnedConsole,
