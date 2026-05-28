@@ -8,6 +8,7 @@ export {
     initTypr,
     intro,
     log,
+    multiselect,
     note,
     outro,
     select,

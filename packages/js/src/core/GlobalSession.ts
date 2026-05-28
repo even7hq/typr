@@ -3,6 +3,7 @@ import type { AbstractAdapter } from "../models/AbstractAdapter";
 import type {
     BoxPromptOptions,
     ConfirmPromptOptions,
+    MultiselectPromptOptions,
     NoteSessionOptions,
     SelectPromptOptions,
     SessionCommonOptions,
@@ -126,6 +127,14 @@ export function text(options: TextPromptOptions): Promise<unknown> {
  */
 export function select(options: SelectPromptOptions): Promise<unknown> {
     return getGlobalAdapter().select(options);
+}
+
+/**
+ * @param options - Multiselect prompt options.
+ * @returns Selected values or symbol cancel value.
+ */
+export function multiselect(options: MultiselectPromptOptions): Promise<unknown> {
+    return getGlobalAdapter().multiselect(options);
 }
 
 /**
