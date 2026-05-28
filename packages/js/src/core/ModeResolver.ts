@@ -1,5 +1,5 @@
 import { RuntimeMode } from "../types/ProtocolTypes";
-import { TUIClientSettings } from "../types/TUITypes";
+import type { TUIClientSettings } from "../types/TUITypes";
 
 /**
  * Resolves the effective {@link RuntimeMode} from explicit settings and environment variables.

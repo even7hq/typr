@@ -2,10 +2,10 @@ import { isTTY } from "@clack/prompts";
 
 import { ClackAdapter } from "../adapters/clack";
 import { NDJSONPromptAdapter } from "../adapters/ndjson";
-import { AbstractAdapter } from "../models/AbstractAdapter";
+import type { AbstractAdapter } from "../models/AbstractAdapter";
 import { NDJSONStdioTransport } from "../transports/ndjson";
 import { AutoPolicy, RuntimeMode } from "../types/ProtocolTypes";
-import { TUIClientSettings } from "../types/TUITypes";
+import type { TUIClientSettings } from "../types/TUITypes";
 import { AutoAdapter } from "./AutoAdapter";
 import { ModeResolver } from "./ModeResolver";
 

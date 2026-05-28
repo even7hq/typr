@@ -1,5 +1,5 @@
 import { ClackAdapter } from "../adapters/clack";
-import { AbstractAdapter } from "../models/AbstractAdapter";
+import type { AbstractAdapter } from "../models/AbstractAdapter";
 import type {
     BoxPromptOptions,
     ConfirmPromptOptions,

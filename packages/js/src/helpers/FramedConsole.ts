@@ -531,6 +531,7 @@ export namespace FramedConsole {
             || process.env.CI === "1"
             || Boolean(process.env.GITHUB_ACTIONS)
         );
+
         const useInteractive = !isCI && Boolean(process.stdout.isTTY);
 
         if (!useInteractive) {
@@ -871,6 +872,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             scrollOffset = s === "\x1b[5~"
                 ? Math.max(0, scrollOffset - innerHeight)
                 : Math.min(maxOffset, scrollOffset + innerHeight);
+
             render(true);
         }
     };

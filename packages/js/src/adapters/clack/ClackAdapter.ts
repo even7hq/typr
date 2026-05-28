@@ -49,7 +49,7 @@ function stripAuto<T extends { autoPolicy?: unknown }>(options: T): Omit<T, "aut
  * Adapter backed by @clack/prompts for interactive terminals.
  */
 export class ClackAdapter extends AbstractAdapter {
-    private _log: TerminalAdapterLog | undefined;
+    private cachedLog: TerminalAdapterLog | undefined;
 
     /**
      * Updates global clack settings.
@@ -319,11 +319,11 @@ export class ClackAdapter extends AbstractAdapter {
      * @returns Clack backed logger with optional labels and stream helpers.
      */
     public get log(): TerminalAdapterLog {
-        if (!this._log) {
-            this._log = this.createLog();
+        if (!this.cachedLog) {
+            this.cachedLog = this.createLog();
         }
 
-        return this._log;
+        return this.cachedLog;
     }
 
     /**

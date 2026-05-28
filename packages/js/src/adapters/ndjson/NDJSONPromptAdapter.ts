@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { AbstractAdapter } from "../../models/AbstractAdapter";
 import { TUICanceledError } from "../../errors/TUICanceledError";
 import { TyprWireRpcError } from "../../errors/TyprWireRpcError";
-import { NDJSONStdioTransport } from "../../transports/ndjson/NDJSONStdioTransport";
+import type { NDJSONStdioTransport } from "../../transports/ndjson/NDJSONStdioTransport";
 import {
     TYPR_WIRE_VERSION,
     type TyprWireError,
@@ -51,7 +51,7 @@ import { NDJSONWirePayload } from "./NDJSONWirePayload";
 export class NDJSONPromptAdapter extends AbstractAdapter {
     private readonly pending = new Map<string, { resolve: (value: unknown) => void; reject: (reason: unknown) => void }>();
 
-    private _log: TerminalAdapterLog | undefined;
+    private cachedLog: TerminalAdapterLog | undefined;
 
     /**
      * Creates a new NDJSON prompt adapter.
@@ -432,11 +432,11 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
      * @returns Wire-backed logger emitting `LOG` and `STREAM` terminal events.
      */
     public get log(): TerminalAdapterLog {
-        if (!this._log) {
-            this._log = this.createLog();
+        if (!this.cachedLog) {
+            this.cachedLog = this.createLog();
         }
 
-        return this._log;
+        return this.cachedLog;
     }
 
     /**

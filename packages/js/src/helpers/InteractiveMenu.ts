@@ -1,7 +1,7 @@
 import { isCancel } from "@clack/prompts";
 
 import { TUICanceledError } from "../errors/TUICanceledError";
-import { AbstractAdapter } from "../models/AbstractAdapter";
+import type { AbstractAdapter } from "../models/AbstractAdapter";
 
 /**
  * The canonical binary name shown in hints and the intro header.
