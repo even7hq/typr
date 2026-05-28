@@ -32,6 +32,7 @@ export {
 } from "./helpers/FramedConsole";
 export type { InterruptPolicy } from "./types/InterruptPolicy";
 export { StreamLineBuffer, type StreamLineHandlers } from "./helpers/StreamLineBuffer";
+export { TerminalOverlay } from "./helpers/TerminalOverlay";
 export { loadClack } from "./helpers/ClackLoader";
 export {
     PinnedConsole,

@@ -2,6 +2,7 @@ import * as clack from "@clack/prompts";
 import stringWidth from "fast-string-width";
 
 import { StreamLineBuffer, type StreamLineHandlers } from "./StreamLineBuffer";
+import { TerminalOverlay } from "./TerminalOverlay";
 import type { InterruptPolicy } from "../types/InterruptPolicy";
 
 // #region Types
@@ -161,7 +162,8 @@ interface PanelDimensions {
 
 // #endregion
 
-const THROTTLE_MS = 80;
+/** Debounce delay before diff repaint after stream output (trailing edge). */
+const RENDER_DEBOUNCE_MS = 80;
 
 const DEFAULT_HEIGHT = 14;
 
@@ -169,20 +171,14 @@ const DEFAULT_WIDTH = 72;
 
 const MAX_BUFFER_LINES = 2_000;
 
-/** Clack spinner prefix is one frame glyph plus two spaces (only on the first line). */
-const CLACK_SPINNER_PREFIX_COLS = 3;
-
 /** Spaces between the side border and the content column. */
 const ROW_SIDE_PAD = 1;
 
-/** Extra columns reserved so clack never soft-wraps the frame. */
+/** Extra columns reserved so the frame never soft-wraps at the terminal edge. */
 const TERMINAL_WIDTH_MARGIN = 2;
 
-/** Top border, phase row, bottom border, and scroll hint (excluding clack spinner row). */
+/** Top border, phase row, bottom border, and scroll hint. */
 const FRAME_STATIC_ROWS = 4;
-
-/** Leading newline reserves the first row for clack's spinner glyph only. */
-const CLACK_SPINNER_ROW = 1;
 
 /**
  * Box-drawing characters for the panel border.
@@ -472,11 +468,11 @@ function computePanelDimensions(options: FramedConsoleOptions): PanelDimensions 
     const innerHeight = useFullTerminal
         ? Math.max(
             3,
-            termHeight - FRAME_STATIC_ROWS - CLACK_SPINNER_ROW
+            termHeight - FRAME_STATIC_ROWS
         )
         : (options.height ?? DEFAULT_HEIGHT);
 
-    const maxInnerWidth = maxBorderWidth - 4 - ROW_SIDE_PAD * 2 - CLACK_SPINNER_PREFIX_COLS;
+    const maxInnerWidth = maxBorderWidth - 4 - ROW_SIDE_PAD * 2;
 
     const innerWidth = useFullTerminal
         ? Math.max(40, maxInnerWidth)
@@ -630,12 +626,12 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     let phase = "";
     let scrollOffset = 0;
     let closed = false;
-    let lastRenderAt = 0;
+    let renderTimer: ReturnType<typeof setTimeout> | undefined;
     let keyListenerAttached = false;
     let sigintListenerAttached = false;
     let resizeListenerAttached = false;
 
-    const spinner = clack.spinner();
+    const overlayState = TerminalOverlay.createState();
     const interruptPolicy = options.interruptPolicy ?? "handoff";
 
     const panelTitle = options.interruptHint
@@ -662,7 +658,13 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
          * @returns Nothing.
          */
         const finishInterrupt = (): void => {
-            spinner.stop("Interrupted");
+            if (renderTimer !== undefined) {
+                clearTimeout(renderTimer);
+                renderTimer = undefined;
+            }
+
+            TerminalOverlay.leaveAltScreen(process.stdout);
+            process.stdout.write("Interrupted\n");
             options.onReleaseTerminal?.();
             releaseTerminal();
 
@@ -732,13 +734,27 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             ));
         }
 
-        return `\n${frameLines.join("\n")}`;
+        return frameLines.join("\n");
     };
 
     /**
-     * Updates the spinner with the latest frame.
+     * Repaints the framed panel when the built frame differs from the last paint.
      *
-     * @param force - When true, bypasses throttle.
+     * @returns Nothing.
+     */
+    const flushRender = (): void => {
+        if (closed) {
+            return;
+        }
+
+        const frameLines = buildFrameText().split("\n");
+        TerminalOverlay.paintDiff(process.stdout, frameLines, overlayState);
+    };
+
+    /**
+     * Schedules a trailing debounced repaint (coalesces rapid SSH lines).
+     *
+     * @param force - When true, paints immediately (scroll keys, phase changes).
      * @returns Nothing.
      */
     const render = (force = false): void => {
@@ -746,14 +762,24 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             return;
         }
 
-        const now = Date.now();
+        if (force) {
+            if (renderTimer !== undefined) {
+                clearTimeout(renderTimer);
+                renderTimer = undefined;
+            }
 
-        if (!force && now - lastRenderAt < THROTTLE_MS) {
+            flushRender();
             return;
         }
 
-        lastRenderAt = now;
-        spinner.message(buildFrameText());
+        if (renderTimer !== undefined) {
+            clearTimeout(renderTimer);
+        }
+
+        renderTimer = setTimeout(() => {
+            renderTimer = undefined;
+            flushRender();
+        }, RENDER_DEBOUNCE_MS);
     };
 
     /**
@@ -806,6 +832,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             previous.innerWidth !== dimensions.innerWidth
             || previous.innerHeight !== dimensions.innerHeight
         ) {
+            overlayState.previousLines = [];
             render(true);
         }
     };
@@ -938,16 +965,28 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
         }
 
         closed = true;
+
+        if (renderTimer !== undefined) {
+            clearTimeout(renderTimer);
+            renderTimer = undefined;
+        }
+
         detachKeys();
         detachResize();
-        spinner.stop(message);
+        TerminalOverlay.leaveAltScreen(process.stdout);
+        process.stdout.write(`${message}\n`);
         options.onReleaseTerminal?.();
         releaseTerminal();
     };
 
     attachKeys();
     attachResize();
-    spinner.start(buildFrameText());
+    TerminalOverlay.enterAltScreen(process.stdout);
+    TerminalOverlay.paintDiff(
+        process.stdout,
+        buildFrameText().split("\n"),
+        overlayState
+    );
 
     const handlers = StreamLineBuffer.create(pushLine);
 
