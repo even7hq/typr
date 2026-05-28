@@ -1,5 +1,20 @@
 export { isCancel } from "@clack/prompts";
 
+export {
+    box,
+    cancel,
+    confirm,
+    disposeTypr,
+    initTypr,
+    intro,
+    log,
+    note,
+    outro,
+    select,
+    spinner,
+    text,
+    updateSettings
+} from "./core/GlobalSession";
 export { ClackAdapter } from "./adapters/clack";
 export { ClackPromptMapper } from "./adapters/clack/ClackPromptMapper";
 export { NDJSONPromptAdapter, NDJSONWirePayload } from "./adapters/ndjson";
@@ -11,10 +26,20 @@ export { TyprWireRpcError } from "./errors/TyprWireRpcError";
 export { TimelineChannel } from "./events/TimelineEvents";
 export {
     FramedConsole,
+    type FramedConsoleInterruptPolicy,
     type FramedConsoleOptions,
     type FramedConsoleSession
 } from "./helpers/FramedConsole";
+export type { InterruptPolicy } from "./types/InterruptPolicy";
 export { StreamLineBuffer, type StreamLineHandlers } from "./helpers/StreamLineBuffer";
+export { loadClack } from "./helpers/ClackLoader";
+export {
+    PinnedConsole,
+    installPinnedConsole,
+    type PinnedConsoleOptions,
+    type PinnedConsoleTextConfiguration
+} from "./helpers/PinnedConsole";
+export { RuntimeErrorUtils } from "./helpers/RuntimeErrorUtils";
 export { InteractiveMenuOptions, runInteractiveMenu } from "./helpers/InteractiveMenu";
 export { AbstractAdapter } from "./models/AbstractAdapter";
 export { AbstractTransport } from "./models/AbstractTransport";

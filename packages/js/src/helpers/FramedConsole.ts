@@ -2,8 +2,14 @@ import * as clack from "@clack/prompts";
 import stringWidth from "fast-string-width";
 
 import { StreamLineBuffer, type StreamLineHandlers } from "./StreamLineBuffer";
+import type { InterruptPolicy } from "../types/InterruptPolicy";
 
 // #region Types
+
+/**
+ * @see {@link InterruptPolicy}
+ */
+export type FramedConsoleInterruptPolicy = InterruptPolicy;
 
 /**
  * Options for a framed live terminal panel.
@@ -38,14 +44,67 @@ export interface FramedConsoleOptions {
     isCI?: boolean;
 
     /**
-     * Called when the user presses Ctrl+C while the panel is active (before process exit).
+     * Called when the user presses Ctrl+C while the panel is active (before the panel closes).
      */
     onInterrupt?: () => void | Promise<void>;
+
+    /**
+     * What happens after {@link FramedConsoleOptions.onInterrupt} completes. Default: `"handoff"`.
+     */
+    interruptPolicy?: FramedConsoleInterruptPolicy;
+
+    /**
+     * Optional hint appended to the panel title (caller chooses the text).
+     */
+    interruptHint?: string;
 
     /**
      * Called after the panel closes to restore stdin for subsequent prompts.
      */
     onReleaseTerminal?: () => void;
+
+    /**
+     * Optional callbacks for non-interactive mode instead of default clack.log output.
+     */
+    plainLog?: {
+        /**
+         * Logs one completed stream line.
+         *
+         * @param line - Line text without trailing newline.
+         * @param stream - stdout or stderr.
+         * @returns Nothing.
+         */
+        onLine: (line: string, stream: "stdout" | "stderr") => void;
+
+        /**
+         * Logs a phase/status update.
+         *
+         * @param phase - Phase description.
+         * @returns Nothing.
+         */
+        onPhase: (phase: string) => void;
+
+        /**
+         * Logs a success status when the panel stops cleanly.
+         *
+         * @param message - Final status line.
+         * @returns Nothing.
+         */
+        onSuccess?: (message: string) => void;
+
+        /**
+         * Logs a failure status when the panel fails.
+         *
+         * @param message - Failure status line.
+         * @returns Nothing.
+         */
+        onError?: (message: string) => void;
+    };
+
+    /**
+     * Title for the clack note when {@link FramedConsoleSession.fail} dumps buffered output.
+     */
+    failNoteTitle?: string;
 }
 
 /**
@@ -507,6 +566,11 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
             return;
         }
 
+        if (options.plainLog) {
+            options.plainLog.onLine(line, stream);
+            return;
+        }
+
         if (stream === "stderr") {
             clack.log.warn(`[${title}] ${line}`);
         } else {
@@ -520,6 +584,11 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
         handlers,
 
         setPhase(phase: string): void {
+            if (options.plainLog?.onPhase) {
+                options.plainLog.onPhase(phase);
+                return;
+            }
+
             clack.log.info(`[${title}] ${phase}`);
         },
 
@@ -528,12 +597,22 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
         },
 
         stop(message: string): void {
-            clack.log.success(message);
+            if (options.plainLog?.onSuccess) {
+                options.plainLog.onSuccess(message);
+            } else {
+                clack.log.success(message);
+            }
+
             options.onReleaseTerminal?.();
         },
 
         fail(message: string): void {
-            clack.log.error(message);
+            if (options.plainLog?.onError) {
+                options.plainLog.onError(message);
+            } else {
+                clack.log.error(message);
+            }
+
             options.onReleaseTerminal?.();
         }
     };
@@ -557,9 +636,14 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     let resizeListenerAttached = false;
 
     const spinner = clack.spinner();
+    const interruptPolicy = options.interruptPolicy ?? "handoff";
+
+    const panelTitle = options.interruptHint
+        ? `${options.title} | ${options.interruptHint}`
+        : options.title;
 
     /**
-     * Tears down the panel and exits with 130 after optional cleanup.
+     * Tears down the panel after optional cleanup; exits only when {@link interruptPolicy} is `"exit"`.
      *
      * @returns Nothing.
      */
@@ -573,25 +657,28 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
         detachResize();
 
         /**
-         * Stops the spinner and exits the process after interrupt cleanup.
+         * Stops the spinner and restores the terminal; optionally exits the process.
          *
          * @returns Nothing.
          */
-        const finishExit = (): void => {
+        const finishInterrupt = (): void => {
             spinner.stop("Interrupted");
             options.onReleaseTerminal?.();
             releaseTerminal();
-            process.exit(130);
+
+            if (interruptPolicy === "exit") {
+                process.exit(130);
+            }
         };
 
         const interruptWork = options.onInterrupt?.();
 
         if (interruptWork && typeof (interruptWork as Promise<void>).then === "function") {
-            (interruptWork as Promise<void>).then(finishExit).catch(finishExit);
+            (interruptWork as Promise<void>).then(finishInterrupt).catch(finishInterrupt);
             return;
         }
 
-        finishExit();
+        finishInterrupt();
     };
 
     /**
@@ -620,7 +707,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     const buildFrameText = (): string => {
         const { innerWidth, borderWidth } = dimensions;
         const frameLines: string[] = [
-            buildTopBorder(options.title, borderWidth),
+            buildTopBorder(panelTitle, borderWidth),
             frameRowSafe(phase || "waiting for output...", innerWidth, borderWidth),
             ...getVisibleLines().map((row) => frameRowSafe(row, innerWidth, borderWidth)),
             buildBottomBorder(borderWidth)
@@ -893,7 +980,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             finalize(message);
 
             if (dump) {
-                clack.note(dump, "Output");
+                clack.note(dump, options.failNoteTitle ?? "Output");
             }
         }
     };
