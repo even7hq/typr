@@ -9,7 +9,12 @@ export { TUIClient } from "./core/TUIClient";
 export { TUICanceledError } from "./errors/TUICanceledError";
 export { TyprWireRpcError } from "./errors/TyprWireRpcError";
 export { TimelineChannel } from "./events/TimelineEvents";
-export { FramedConsole } from "./helpers/FramedConsole";
+export {
+    FramedConsole,
+    type FramedConsoleOptions,
+    type FramedConsoleSession
+} from "./helpers/FramedConsole";
+export { StreamLineBuffer, type StreamLineHandlers } from "./helpers/StreamLineBuffer";
 export { InteractiveMenuOptions, runInteractiveMenu } from "./helpers/InteractiveMenu";
 export { AbstractAdapter } from "./models/AbstractAdapter";
 export { AbstractTransport } from "./models/AbstractTransport";

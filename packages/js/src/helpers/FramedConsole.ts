@@ -1,628 +1,900 @@
-// framedConsole.js
+import * as clack from "@clack/prompts";
+import stringWidth from "fast-string-width";
 
-import { format } from "util";
+import { StreamLineBuffer, type StreamLineHandlers } from "./StreamLineBuffer";
 
-interface TextConfiguration {
+// #region Types
+
+/**
+ * Options for a framed live terminal panel.
+ */
+export interface FramedConsoleOptions {
     /**
-     * The prefix to display in the header.
+     * Title shown on the top border of the panel.
      */
-    prefix?: string;
+    title: string;
 
     /**
-     * The wrapper function to apply to the text.
+     * Number of visible content lines inside the frame (excluding phase row).
+     * Ignored when {@link FramedConsoleOptions.useFullTerminal} is true (default).
      */
-    wrapper?: (text: string, configuration: TextConfiguration) => string;
+    height?: number;
 
     /**
-     * The text to display in the header.
+     * Inner width of the panel in columns (content only, excluding borders and padding).
+     * Ignored when {@link FramedConsoleOptions.useFullTerminal} is true (default).
      */
-    text?: string;
+    width?: number;
+
+    /**
+     * When true (default), the panel uses the full terminal rows and columns and
+     * reflows on `stdout` resize events.
+     */
+    useFullTerminal?: boolean;
+
+    /**
+     * When true, never uses the interactive panel (plain line logging only).
+     */
+    isCI?: boolean;
+
+    /**
+     * Called when the user presses Ctrl+C while the panel is active (before process exit).
+     */
+    onInterrupt?: () => void | Promise<void>;
+
+    /**
+     * Called after the panel closes to restore stdin for subsequent prompts.
+     */
+    onReleaseTerminal?: () => void;
 }
 
-type FramedConsoleOptions = {
-    /**
-     * The header configuration.
-     */
-    header?: TextConfiguration;
-
-    /**
-     * The text to display in the footer.
-     */
-    footer?: TextConfiguration;
-
-    /**
-     * Whether to enable the framed console.
-     * When false, no cursor/clear-screen sequences are emitted and logs pass through unchanged.
-     * @default true
-     */
-    enabled?: boolean;
-};
-
 /**
- * Regular expression that matches all ANSI escape sequences (colors, cursor moves, etc.).
+ * Active framed terminal session.
  */
-const ANSI_ESCAPE_RE = /\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
-
-/**
- * Whether the current platform supports VT100 scroll regions and raw-mode stdin.
- * Windows terminals (cmd, PowerShell, ConPTY) do not support scroll regions reliably,
- * so the framed console is disabled entirely on that platform.
- */
-const PLATFORM_SUPPORTS_FRAME = process.platform !== "win32";
-
-/**
- * Returns the visible (display) length of a string, ignoring ANSI codes.
- */
-function visibleLength(str: string): number {
-    return str.replace(ANSI_ESCAPE_RE, "").length;
-}
-
-export class FramedConsole {
-    private originalConsole: {
-        log: typeof console.log;
-        info: typeof console.info;
-        warn: typeof console.warn;
-        error: typeof console.error;
-        debug: typeof console.debug;
-    };
-
-    private get terminalHeight(): number {
-        return process.stdout.rows || Number(process.env.LINES) || 24;
-    }
-
-    private get terminalWidth(): number {
-        return process.stdout.columns || Number(process.env.COLUMNS) || 80;
-    }
-
-    private get headerLine(): number {
-        return 1;
-    }
-
-    private get footerLine(): number {
-        return this.terminalHeight;
-    }
-
+export interface FramedConsoleSession {
     /**
-     * First line of the scrollable body region (live mode).
-     */
-    private get bodyTop(): number {
-        return this.hasHeader ? this.headerLine + 1 : 1;
-    }
-
-    /**
-     * Last line of the scrollable body region (live mode).
-     */
-    private get bodyBottom(): number {
-        return this.hasFooter ? this.footerLine - 1 : this.terminalHeight;
-    }
-
-    /**
-     * Whether the framed console is enabled.
-     */
-    private enabled: boolean;
-
-    /**
-     * Ring buffer of all log lines (already wrapped to terminal width at time of write).
-     * Used for scroll-review mode and for the crash dump in restore().
-     */
-    private messageBuffer: string[] = [];
-
-    /**
-     * Maximum number of lines kept in the buffer to prevent unbounded memory growth.
-     */
-    private static readonly MAX_BUFFER = 10_000;
-
-    /**
-     * Whether the console is currently in scroll-review mode (user pressed PgUp).
-     * In review mode the live scroll region is replaced by a full-screen dump so the
-     * terminal's own scrollback bar can be used freely.
-     */
-    private isReviewing = false;
-
-    constructor(protected readonly options: FramedConsoleOptions = {}) {
-        // Disable on platforms that don't support VT100 scroll regions (e.g. Windows),
-        // or when the caller explicitly passes enabled: false (e.g. --noFrame).
-        this.enabled = options.enabled !== false && PLATFORM_SUPPORTS_FRAME;
-
-        // Keep original console methods for restore().
-        this.originalConsole = {
-            log: console.log,
-            info: console.info,
-            warn: console.warn,
-            error: console.error,
-            debug: console.debug
-        };
-
-        // Draw the frame for the first time
-        this.drawLiveFrame();
-
-        if (this.enabled) {
-            this.setupResizeHandler();
-            this.setupKeyboardHandlers();
-        }
-
-        // Hook console global
-        console.log = this.createHookedMethod("", this.originalConsole.log);
-        console.info = this.createHookedMethod("info", this.originalConsole.info);
-        console.warn = this.createHookedMethod("warn", this.originalConsole.warn);
-        console.error = this.createHookedMethod("error", this.originalConsole.error);
-        console.debug = this.createHookedMethod("debug", this.originalConsole.debug);
-    }
-
-    /**
-     * Applies the text configuration to the text.
-     */
-    private applyTextConfiguration(configuration?: TextConfiguration): string {
-        if (!configuration) {
-            return "";
-        }
-
-        let text = configuration.prefix ?? "";
-
-        if (configuration.text) {
-            text += configuration.text;
-        }
-
-        if (configuration.wrapper) {
-            text = configuration.wrapper(text, configuration);
-        }
-
-        return text;
-    }
-
-    protected get headerText(): string {
-        return this.applyTextConfiguration(this.options.header);
-    }
-
-    protected get footerText(): string {
-        return this.applyTextConfiguration(this.options.footer);
-    }
-
-    protected get hasHeader(): boolean {
-        return !!this.options.header;
-    }
-
-    protected get hasFooter(): boolean {
-        return !!this.options.footer;
-    }
-
-    /**
-     * Updates the header configuration and redraws the pinned lines.
-     */
-    public setHeader(configuration: TextConfiguration): void {
-        this.options.header = {...this.options.header, ...configuration};
-        this.redrawHeaderFooter();
-    }
-
-    /**
-     * Updates the footer configuration and redraws the pinned lines.
-     */
-    public setFooter(configuration: TextConfiguration): void {
-        this.options.footer = {...this.options.footer, ...configuration};
-        this.redrawHeaderFooter();
-    }
-
-    /**
-     * Restores the original console methods and leaves the terminal in a clean state.
+     * Updates the subtitle line under the title (phase / connection status).
      *
-     * On a clean exit this clears the frame and parks the cursor.
-     * On an unexpected crash the full buffer is dumped to the scrollback so no
-     * log lines are lost.
+     * @param phase - Phase description.
+     * @returns Nothing.
      */
-    public restore(isDump = false): void {
-        console.log = this.originalConsole.log;
-        console.info = this.originalConsole.info;
-        console.warn = this.originalConsole.warn;
-        console.error = this.originalConsole.error;
-        console.debug = this.originalConsole.debug;
+    setPhase(phase: string): void;
 
-        if (!this.enabled) {
-            return;
+    /**
+     * Handlers for buffered stdout/stderr stream output.
+     */
+    readonly handlers: StreamLineHandlers;
+
+    /**
+     * Appends a single line to the scroll buffer (local logs, not from a stream).
+     *
+     * @param line - Text line without trailing newline.
+     * @param stream - Optional stream tag for styling.
+     * @returns Nothing.
+     */
+    appendLine(line: string, stream?: "stdout" | "stderr"): void;
+
+    /**
+     * Closes the panel and prints a success status below the frame.
+     *
+     * @param message - Final status line.
+     * @returns Nothing.
+     */
+    stop(message: string): void;
+
+    /**
+     * Closes the panel and prints failure output below.
+     *
+     * @param message - Failure status line.
+     * @returns Nothing.
+     */
+    fail(message: string): void;
+}
+
+/**
+ * Computed layout for the framed panel.
+ */
+interface PanelDimensions {
+    innerWidth: number;
+    innerHeight: number;
+    borderWidth: number;
+}
+
+// #endregion
+
+const THROTTLE_MS = 80;
+
+const DEFAULT_HEIGHT = 14;
+
+const DEFAULT_WIDTH = 72;
+
+const MAX_BUFFER_LINES = 2_000;
+
+/** Clack spinner prefix is one frame glyph plus two spaces (only on the first line). */
+const CLACK_SPINNER_PREFIX_COLS = 3;
+
+/** Spaces between the side border and the content column. */
+const ROW_SIDE_PAD = 1;
+
+/** Extra columns reserved so clack never soft-wraps the frame. */
+const TERMINAL_WIDTH_MARGIN = 2;
+
+/** Top border, phase row, bottom border, and scroll hint (excluding clack spinner row). */
+const FRAME_STATIC_ROWS = 4;
+
+/** Leading newline reserves the first row for clack's spinner glyph only. */
+const CLACK_SPINNER_ROW = 1;
+
+/**
+ * Box-drawing characters for the panel border.
+ */
+const BOX = {
+    tl: "┌",
+    tr: "┐",
+    bl: "└",
+    br: "┘",
+    h: "─",
+    v: "│"
+} as const;
+
+/**
+ * Strips ANSI escape sequences from a string.
+ *
+ * @param text - Text that may contain ANSI codes.
+ * @returns Plain text without ANSI sequences.
+ */
+function stripAnsi(text: string): string {
+    return text.replace(/\x1b\[[0-9;]*m/g, "");
+}
+
+/**
+ * Returns the terminal display width of a string.
+ *
+ * @param text - Text to measure.
+ * @returns Visible width in terminal columns.
+ */
+function displayWidth(text: string): number {
+    return stringWidth(stripAnsi(text));
+}
+
+/**
+ * Iterates grapheme clusters (emoji sequences stay intact).
+ *
+ * @param text - Plain text without ANSI codes.
+ * @returns Grapheme segments in order.
+ */
+function* graphemes(text: string): Generator<string> {
+    const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+
+    for (const { segment } of segmenter.segment(text)) {
+        yield segment;
+    }
+}
+
+/**
+ * Normalizes remote text for stable terminal column counting.
+ *
+ * @param text - Raw line from a stream.
+ * @returns Text safe to measure and render inside the frame.
+ */
+function normalizeTerminalText(text: string): string {
+    return text
+        .replace(/\r/g, "")
+        .replace(/\uFE0F/g, "");
+}
+
+/**
+ * Truncates text to a maximum visible width, appending an ellipsis when needed.
+ *
+ * @param text - Text to truncate.
+ * @param maxWidth - Maximum visible columns.
+ * @returns Truncated text.
+ */
+function truncateToWidth(text: string, maxWidth: number): string {
+    const plain = stripAnsi(text);
+
+    if (maxWidth <= 0) {
+        return "";
+    }
+
+    if (displayWidth(plain) <= maxWidth) {
+        return plain;
+    }
+
+    let out = "";
+    let width = 0;
+    const budget = Math.max(1, maxWidth - 1);
+
+    for (const segment of graphemes(plain)) {
+        const segmentWidth = displayWidth(segment);
+
+        if (width + segmentWidth > budget) {
+            out += "…";
+            break;
         }
 
-        this.teardownKeyboardHandlers();
+        out += segment;
+        width += segmentWidth;
+    }
 
-        // Reset scroll region so the whole terminal is usable again
-        process.stdout.write("\x1b[r");
+    return out;
+}
 
-        if (isDump) {
-            // Crash path: dump the full buffer so the developer can see everything
-            process.stdout.write("\x1b[2J\x1b[H\x1b[0m");
+/**
+ * Pads text on the right to an exact visible width.
+ *
+ * @param text - Text to pad.
+ * @param targetWidth - Target visible width.
+ * @returns Padded text.
+ */
+function padToWidth(text: string, targetWidth: number): string {
+    const plain = stripAnsi(text);
+    const len = displayWidth(plain);
 
-            for (const line of this.messageBuffer) {
-                process.stdout.write(line + "\n");
+    if (len >= targetWidth) {
+        return truncateToWidth(plain, targetWidth);
+    }
+
+    return plain + " ".repeat(targetWidth - len);
+}
+
+/**
+ * Builds one framed row: │ + pad + content + pad + │.
+ *
+ * @param content - Inner content.
+ * @param innerWidth - Content column width.
+ * @returns A full terminal row.
+ */
+function frameRow(content: string, innerWidth: number): string {
+    const pad = " ".repeat(ROW_SIDE_PAD);
+
+    return `${BOX.v}${pad}${padToWidth(content, innerWidth)}${pad}${BOX.v}`;
+}
+
+/**
+ * Shrinks or pads a full frame line until its visible width matches the target.
+ *
+ * @param line - A complete top, body, or bottom row.
+ * @param targetWidth - Required visible width in columns.
+ * @returns A line that fits within targetWidth.
+ */
+function fitLineToWidth(line: string, targetWidth: number): string {
+    if (targetWidth <= 0) {
+        return "";
+    }
+
+    if (displayWidth(line) <= targetWidth) {
+        return line;
+    }
+
+    let fitted = truncateToWidth(line, targetWidth);
+
+    while (displayWidth(fitted) > targetWidth && displayWidth(fitted) > 0) {
+        fitted = truncateToWidth(fitted, Math.max(1, displayWidth(fitted) - 1));
+    }
+
+    return fitted;
+}
+
+/**
+ * Builds a body row and guarantees it does not exceed borderWidth.
+ *
+ * @param content - Inner content.
+ * @param innerWidth - Content column width.
+ * @param borderWidth - Full outer row width.
+ * @returns A border-aligned row.
+ */
+function frameRowSafe(content: string, innerWidth: number, borderWidth: number): string {
+    let safeContent = truncateToWidth(content, innerWidth);
+    let row = frameRow(safeContent, innerWidth);
+
+    while (displayWidth(row) > borderWidth && displayWidth(safeContent) > 0) {
+        safeContent = truncateToWidth(safeContent, Math.max(0, displayWidth(safeContent) - 1));
+        row = frameRow(safeContent, innerWidth);
+    }
+
+    return fitLineToWidth(row, borderWidth);
+}
+
+/**
+ * Returns true when the line looks like curl progress noise.
+ *
+ * @param line - Single output line.
+ * @returns Whether the line should be hidden.
+ */
+function isCurlProgressLine(line: string): boolean {
+    const t = line.trim();
+
+    if (!t) {
+        return true;
+    }
+
+    if (/^\d+%$/.test(t)) {
+        return true;
+    }
+
+    return /^\d+\s+\d+/.test(t)
+        || /^% Total/.test(t)
+        || /^Dload\s+Upload/.test(t)
+        || /^[\d\s]+$/.test(t);
+}
+
+/**
+ * Wraps or truncates text to fit inside the inner panel width.
+ *
+ * @param text - Text to fit.
+ * @param width - Maximum visible width.
+ * @returns Lines that fit the inner width.
+ */
+function wrapToWidth(text: string, width: number): string[] {
+    const plain = stripAnsi(text);
+
+    if (displayWidth(plain) <= width) {
+        return [plain];
+    }
+
+    const lines: string[] = [];
+    let current = "";
+
+    for (const segment of graphemes(plain)) {
+        const next = current + segment;
+
+        if (displayWidth(next) > width) {
+            if (current) {
+                lines.push(current);
             }
+
+            current = displayWidth(segment) > width
+                ? truncateToWidth(segment, width)
+                : segment;
         } else {
-            // Clean exit: just clear the frame and move cursor to bottom
-            process.stdout.write("\x1b[2J\x1b[H\x1b[0m");
-            process.stdout.write(`\x1b[${this.terminalHeight};1H\n`);
+            current = next;
         }
     }
 
-    /**
-     * Redraws the header and footer without touching the body area.
-     */
-    public redraw(): void {
-        this.redrawHeaderFooter();
+    if (current) {
+        lines.push(current);
     }
 
-    /**
-     * No-op kept for API compatibility.
-     * The buffer is never cleared - it grows continuously so restore() can always dump it.
-     */
-    public clearBuffer(): void {
-        // Intentionally empty: the buffer must survive phase transitions so restore()
-        // can always dump the full history on a crash.
+    return lines.length > 0 ? lines : [""];
+}
+
+/**
+ * Builds the top border row with a centered title.
+ *
+ * @param title - Panel title.
+ * @param borderWidth - Full outer width of the panel.
+ * @returns Top border line.
+ */
+function buildTopBorder(title: string, borderWidth: number): string {
+    const maxTitleWidth = borderWidth - 2;
+    let titleText = ` ${title} `;
+
+    if (displayWidth(titleText) > maxTitleWidth) {
+        titleText = ` ${truncateToWidth(title, Math.max(4, maxTitleWidth - 2))} `;
     }
 
-    // ─── Live frame ──────────────────────────────────────────────────────────
+    const titleLen = displayWidth(titleText);
+    const topPad = Math.max(0, borderWidth - 2 - titleLen);
 
-    /**
-     * Draws the full live frame:
-     *   • clears the screen
-     *   • pins header (line 1) and footer (last line)
-     *   • sets the terminal scroll region to the body area
-     *   • parks the cursor at the top of the body
-     */
-    private drawLiveFrame(): void {
-        if (!this.enabled) {
-            return;
-        }
+    return fitLineToWidth(
+        `${BOX.tl}${titleText}${BOX.h.repeat(topPad)}${BOX.tr}`,
+        borderWidth
+    );
+}
 
-        process.stdout.write("\x1b[2J\x1b[H\x1b[0m");
+/**
+ * Builds the bottom border row with exact outer width.
+ *
+ * @param borderWidth - Full outer width of the panel.
+ * @returns Bottom border line.
+ */
+function buildBottomBorder(borderWidth: number): string {
+    const dashCount = Math.max(0, borderWidth - 2);
 
-        if (this.hasHeader) {
-            process.stdout.write(`\x1b[1;1H\x1b[2K${this.headerText}`);
-        }
+    return fitLineToWidth(`${BOX.bl}${BOX.h.repeat(dashCount)}${BOX.br}`, borderWidth);
+}
 
-        if (this.hasFooter) {
-            process.stdout.write(`\x1b[${this.footerLine};1H\x1b[2K${this.footerText}`);
-        }
+/**
+ * Computes panel dimensions from the current terminal size and options.
+ *
+ * @param options - Panel options.
+ * @returns Layout dimensions for the frame.
+ */
+function computePanelDimensions(options: FramedConsoleOptions): PanelDimensions {
+    const termWidth = process.stdout.columns ?? DEFAULT_WIDTH;
+    const termHeight = process.stdout.rows ?? 24;
+    const useFullTerminal = options.useFullTerminal !== false;
+    const maxBorderWidth = Math.max(
+        20,
+        termWidth - TERMINAL_WIDTH_MARGIN
+    );
 
-        // Set scroll region and park cursor at top of body
-        process.stdout.write(
-            `\x1b[${this.bodyTop};${this.bodyBottom}r`
-            + `\x1b[${this.bodyTop};1H`
-        );
-    }
+    const innerHeight = useFullTerminal
+        ? Math.max(
+            3,
+            termHeight - FRAME_STATIC_ROWS - CLACK_SPINNER_ROW
+        )
+        : (options.height ?? DEFAULT_HEIGHT);
 
-    /**
-     * Redraws only the pinned header and footer lines using save/restore cursor
-     * so the cursor position inside the body is never disturbed.
-     */
-    private redrawHeaderFooter(): void {
-        if (!this.enabled || this.isReviewing) {
-            return;
-        }
+    const maxInnerWidth = maxBorderWidth - 4 - ROW_SIDE_PAD * 2 - CLACK_SPINNER_PREFIX_COLS;
 
-        let seq = "\x1b[s"; // save cursor
-
-        if (this.hasHeader) {
-            seq += `\x1b[1;1H\x1b[2K\x1b[0m${this.headerText}`;
-        }
-
-        if (this.hasFooter) {
-            seq += `\x1b[${this.footerLine};1H\x1b[2K\x1b[0m${this.footerText}`;
-        }
-
-        seq += "\x1b[u"; // restore cursor
-        process.stdout.write(seq);
-    }
-
-    // ─── Review mode ─────────────────────────────────────────────────────────
-
-    /**
-     * Enters scroll-review mode:
-     *   • resets the scroll region to the full terminal
-     *   • dumps the buffered lines so the terminal's native scrollback works
-     *   • shows a hint in place of the footer
-     *
-     * The user can now scroll freely with the terminal emulator (PgUp/Down,
-     * mouse wheel, etc.).  Press PgDown or End to return to live mode.
-     */
-    private enterReviewMode(): void {
-        if (this.isReviewing || !this.enabled) {
-            return;
-        }
-
-        this.isReviewing = true;
-
-        // Reset the scroll region so the terminal can scroll freely again,
-        // then use the alternate screen buffer to show the full log history.
-        // The alternate screen keeps the live view intact so exiting review
-        // mode (smcup/rmcup) restores it exactly as it was.
-        process.stdout.write(
-            "\x1b[r"        // reset scroll region
-            + "\x1b[?1049h" // enter alternate screen buffer
-            + "\x1b[2J\x1b[H\x1b[0m" // clear alternate screen, cursor to top
+    const innerWidth = useFullTerminal
+        ? Math.max(40, maxInnerWidth)
+        : Math.max(
+            40,
+            Math.min(
+                options.width ?? DEFAULT_WIDTH,
+                maxInnerWidth
+            )
         );
 
-        // Dump all buffered lines into the alternate screen
-        for (const line of this.messageBuffer) {
-            process.stdout.write(line + "\n");
-        }
+    const borderWidth = Math.min(
+        innerWidth + 2 + ROW_SIDE_PAD * 2,
+        maxBorderWidth
+    );
 
-        // Hint bar at the very bottom of the viewport
-        process.stdout.write(`\x1b[${this.terminalHeight};1H\x1b[2K\x1b[7m PgDown / End = back to live \x1b[0m`);
-    }
+    return {
+        innerWidth,
+        innerHeight,
+        borderWidth
+    };
+}
 
-    /**
-     * Returns from scroll-review mode to the live framed view.
-     * Redraws the full frame and replays the buffer inside the scroll region
-     * so the most-recent lines are visible.
-     */
-    private exitReviewMode(): void {
-        if (!this.isReviewing) {
-            return;
-        }
-
-        this.isReviewing = false;
-
-        // Leave the alternate screen buffer - this instantly restores the live
-        // frame exactly as it was before enterReviewMode() was called.
-        process.stdout.write("\x1b[?1049l");
-        this.drawLiveFrame();
-
-        // Replay the last N lines of the buffer so the body isn't empty on return
-        const bodyHeight = this.bodyBottom - this.bodyTop + 1;
-        const start = Math.max(0, this.messageBuffer.length - bodyHeight);
-
-        for (let i = start; i < this.messageBuffer.length; i++) {
-            process.stdout.write(this.messageBuffer[i] + "\n");
-        }
-
-        this.redrawHeaderFooter();
-    }
-
-    // ─── Keyboard ────────────────────────────────────────────────────────────
-
-    private keyListener: ((key: Buffer) => void) | null = null;
-    private keyTimeout: NodeJS.Timeout | null = null;
-    private keyBuffer = "";
-
-    /**
-     * Sets up raw-mode keyboard handling for PgUp (enter review) and PgDown/End
-     * (exit review) as well as Ctrl+C for a clean shutdown.
-     */
-    private setupKeyboardHandlers(): void {
-        if (!process.stdin.isTTY) {
-            return;
-        }
-
-        try {
-            process.stdin.setRawMode(true);
-        } catch {
-            // setRawMode is not supported on this platform/environment - skip keyboard handling
-            return;
-        }
-
-        process.stdin.resume();
-        process.stdin.setEncoding("utf8");
-
-        this.keyListener = (key: Buffer) => {
-            this.keyBuffer += key.toString();
-
-            if (this.keyTimeout) {
-                clearTimeout(this.keyTimeout);
-                this.keyTimeout = null;
-            }
-
-            // Single non-escape character - process immediately
-            if (this.keyBuffer.length === 1 && !this.keyBuffer.startsWith("\u001b")) {
-                this.handleKey(this.keyBuffer);
-                this.keyBuffer = "";
-                return;
-            }
-
-            // Escape sequence - wait briefly to collect all bytes
-            this.keyTimeout = setTimeout(() => {
-                this.handleKey(this.keyBuffer);
-                this.keyBuffer = "";
-                this.keyTimeout = null;
-            }, 10);
-        };
-
-        process.stdin.on("data", this.keyListener);
-    }
-
-    private teardownKeyboardHandlers(): void {
-        if (!process.stdin.isTTY) {
-            return;
-        }
-
-        if (this.keyListener) {
-            process.stdin.removeListener("data", this.keyListener);
-            this.keyListener = null;
-        }
-
-        if (this.keyTimeout) {
-            clearTimeout(this.keyTimeout);
-            this.keyTimeout = null;
-        }
-
+/**
+ * Restores stdin after clack prompts so the process can exit cleanly.
+ *
+ * @returns Nothing.
+ */
+function releaseTerminal(): void {
+    if (process.stdin.isTTY && typeof process.stdin.setRawMode === "function") {
         try {
             process.stdin.setRawMode(false);
         } catch {
-            // ignore - setRawMode may not be available
+            // Ignore if stdin is not in raw mode
         }
+    }
 
+    if (process.stdin.isTTY) {
         process.stdin.pause();
-    }
-
-    /**
-     * Handles a parsed key/escape sequence.
-     */
-    private handleKey(key: string): void {
-        if (!key) {
-            return;
-        }
-
-        const k = key.replace(/\u0000/g, "");
-
-        // Ctrl+C - clean exit
-        if (k === "\u0003" || k.charCodeAt(0) === 3) {
-            this.restore(false);
-            process.exit(0);
-        }
-
-        if (k.startsWith("\u001b")) {
-            // Page Up → enter review mode
-            if (k.includes("5~") || k.endsWith("5~")) {
-                this.enterReviewMode();
-                return;
-            }
-
-            // Page Down or End → exit review mode (return to live)
-            if (k.includes("6~") || k.endsWith("6~") || k.includes("4~") || k.endsWith("F") || k.endsWith("OF")) {
-                this.exitReviewMode();
-                return;
-            }
-        }
-    }
-
-    // ─── Resize ──────────────────────────────────────────────────────────────
-
-    /**
-     * Listens for terminal resize events and redraws the full frame.
-     */
-    private setupResizeHandler(): void {
-        process.stdout.on("resize", () => {
-            if (this.isReviewing) {
-                // In review mode just redraw the hint line at the new last row
-                process.stdout.write(`\x1b[${this.terminalHeight};1H\x1b[2K\x1b[7m PgDown / End = back to live \x1b[0m`);
-            } else {
-                this.drawLiveFrame();
-                const bodyHeight = this.bodyBottom - this.bodyTop + 1;
-                const start = Math.max(0, this.messageBuffer.length - bodyHeight);
-
-                for (let i = start; i < this.messageBuffer.length; i++) {
-                    process.stdout.write(this.messageBuffer[i] + "\n");
-                }
-
-                this.redrawHeaderFooter();
-            }
-        });
-    }
-
-    // ─── Logging ─────────────────────────────────────────────────────────────
-
-    /**
-     * Formats the arguments to a string using util.format (supports %d, %s, etc.).
-     */
-    private formatArguments(args: any[]): string {
-        if (args.length === 0) {
-            return "";
-        }
-
-        return format(...args);
-    }
-
-    /**
-     * Wraps text to fit terminal width, breaking long lines into multiple lines.
-     * Uses visible length (ignoring ANSI escape codes) for accurate measurement.
-     */
-    private wrapText(text: string): string[] {
-        if (!text) {
-            return [""];
-        }
-
-        if (visibleLength(text) <= this.terminalWidth) {
-            return [text];
-        }
-
-        const lines: string[] = [];
-        let currentLine = "";
-        let currentLen = 0;
-
-        const parts = text.split(/(\s+)/);
-
-        for (const part of parts) {
-            const partLen = visibleLength(part);
-            const testLen = currentLen + partLen;
-
-            if (testLen <= this.terminalWidth) {
-                currentLine += part;
-                currentLen = testLen;
-            } else {
-                if (currentLine) {
-                    lines.push(currentLine);
-                }
-
-                if (partLen > this.terminalWidth) {
-                    let remaining = part;
-
-                    while (visibleLength(remaining) > this.terminalWidth) {
-                        lines.push(remaining.slice(0, this.terminalWidth));
-                        remaining = remaining.slice(this.terminalWidth);
-                    }
-
-                    currentLine = remaining;
-                    currentLen = visibleLength(remaining);
-                } else {
-                    currentLine = part;
-                    currentLen = partLen;
-                }
-            }
-        }
-
-        if (currentLine) {
-            lines.push(currentLine);
-        }
-
-        return lines.length > 0 ? lines : [""];
-    }
-
-    /**
-     * Creates a hooked console method.
-     *
-     * In live mode, writes to stdout inside the scroll region and redraws the
-     * header/footer to keep them pinned.  In review mode the write is suppressed
-     * so the user's scroll position isn't disturbed; the line is still buffered.
-     */
-    private createHookedMethod(label: string, originalFn: (...args: any[]) => void): (...args: any[]) => void {
-        return (...args: any[]) => {
-            if (!this.enabled) {
-                return originalFn(...args);
-            }
-
-            const message = this.formatArguments(args);
-            const finalMessage = label ? `[${label}] ${message}` : message;
-
-            // Wrap and buffer every line
-            const wrapped = finalMessage
-                .split(/\r?\n/)
-                .flatMap((line) => this.wrapText(line));
-
-            for (const line of wrapped) {
-                this.messageBuffer.push(line);
-            }
-
-            // Trim buffer to keep memory bounded
-            if (this.messageBuffer.length > FramedConsole.MAX_BUFFER) {
-                this.messageBuffer.splice(0, this.messageBuffer.length - FramedConsole.MAX_BUFFER);
-            }
-
-            // Only write to the terminal in live mode - don't disturb the user's scroll position
-            if (!this.isReviewing) {
-                process.stdout.write(wrapped.join("\n") + "\n");
-                this.redrawHeaderFooter();
-            }
-        };
-    }
-
-    /**
-     * Sets whether the framed console is enabled.
-     */
-    public setEnabled(enabled = true): void {
-        this.enabled = enabled;
     }
 }
 
 /**
- * Installs a framed console with header and footer.
- * @param options Configuration options for the framed console.
- * @returns An instance of FramedConsole with methods to control it.
+ * Framed scrollable terminal panel for live command output (clack spinner, no raw cursor control).
  */
-export function installFramedConsole(options: FramedConsoleOptions = {}): FramedConsole {
-    return new FramedConsole(options);
+export namespace FramedConsole {
+    /**
+     * Creates a framed terminal panel when stdout is a TTY; falls back to plain logging in CI.
+     *
+     * @param options - Panel options.
+     * @returns Session with stream handlers and scroll UI.
+     */
+    export function create(options: FramedConsoleOptions): FramedConsoleSession {
+        const isCI = options.isCI ?? (
+            process.env.CI === "true"
+            || process.env.CI === "1"
+            || Boolean(process.env.GITHUB_ACTIONS)
+        );
+        const useInteractive = !isCI && Boolean(process.stdout.isTTY);
+
+        if (!useInteractive) {
+            return createPlainLoggerSession(options);
+        }
+
+        return createInteractiveSession(options);
+    }
+}
+
+/**
+ * Plain logging fallback when there is no TTY.
+ *
+ * @param options - Panel options.
+ * @returns A session that logs each line.
+ */
+function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleSession {
+    const title = options.title;
+
+    /**
+     * Logs one line with a title prefix.
+     *
+     * @param line - Line text.
+     * @param stream - stdout or stderr.
+     * @returns Nothing.
+     */
+    const logLine = (line: string, stream: "stdout" | "stderr"): void => {
+        if (isCurlProgressLine(line)) {
+            return;
+        }
+
+        if (stream === "stderr") {
+            clack.log.warn(`[${title}] ${line}`);
+        } else {
+            clack.log.info(`[${title}] ${line}`);
+        }
+    };
+
+    const handlers = StreamLineBuffer.create(logLine);
+
+    return {
+        handlers,
+
+        setPhase(phase: string): void {
+            clack.log.info(`[${title}] ${phase}`);
+        },
+
+        appendLine(line: string, stream: "stdout" | "stderr" = "stdout"): void {
+            logLine(line, stream);
+        },
+
+        stop(message: string): void {
+            clack.log.success(message);
+            options.onReleaseTerminal?.();
+        },
+
+        fail(message: string): void {
+            clack.log.error(message);
+            options.onReleaseTerminal?.();
+        }
+    };
+}
+
+/**
+ * Interactive panel rendered via clack spinner only (no stdout cursor control).
+ *
+ * @param options - Panel options.
+ * @returns Interactive framed session.
+ */
+function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleSession {
+    let dimensions = computePanelDimensions(options);
+    const lines: string[] = [];
+    let phase = "";
+    let scrollOffset = 0;
+    let closed = false;
+    let lastRenderAt = 0;
+    let keyListenerAttached = false;
+    let sigintListenerAttached = false;
+    let resizeListenerAttached = false;
+
+    const spinner = clack.spinner();
+
+    /**
+     * Tears down the panel and exits with 130 after optional cleanup.
+     *
+     * @returns Nothing.
+     */
+    const handleUserInterrupt = (): void => {
+        if (closed) {
+            return;
+        }
+
+        closed = true;
+        detachKeys();
+        detachResize();
+
+        /**
+         * Stops the spinner and exits the process after interrupt cleanup.
+         *
+         * @returns Nothing.
+         */
+        const finishExit = (): void => {
+            spinner.stop("Interrupted");
+            options.onReleaseTerminal?.();
+            releaseTerminal();
+            process.exit(130);
+        };
+
+        const interruptWork = options.onInterrupt?.();
+
+        if (interruptWork && typeof (interruptWork as Promise<void>).then === "function") {
+            (interruptWork as Promise<void>).then(finishExit).catch(finishExit);
+            return;
+        }
+
+        finishExit();
+    };
+
+    /**
+     * Returns visible window of buffered lines.
+     *
+     * @returns Lines to render inside the panel.
+     */
+    const getVisibleLines = (): string[] => {
+        const { innerHeight } = dimensions;
+        const maxOffset = Math.max(0, lines.length - innerHeight);
+        const offset = Math.min(scrollOffset, maxOffset);
+        const slice = lines.slice(offset, offset + innerHeight);
+
+        while (slice.length < innerHeight) {
+            slice.push("");
+        }
+
+        return slice;
+    };
+
+    /**
+     * Builds the framed panel as a single multiline string for the spinner.
+     *
+     * @returns Frame text.
+     */
+    const buildFrameText = (): string => {
+        const { innerWidth, borderWidth } = dimensions;
+        const frameLines: string[] = [
+            buildTopBorder(options.title, borderWidth),
+            frameRowSafe(phase || "waiting for output...", innerWidth, borderWidth),
+            ...getVisibleLines().map((row) => frameRowSafe(row, innerWidth, borderWidth)),
+            buildBottomBorder(borderWidth)
+        ];
+
+        const { innerHeight } = dimensions;
+        const hidden = Math.max(0, lines.length - innerHeight);
+
+        if (hidden > 0) {
+            const from = scrollOffset + 1;
+            const to = Math.min(scrollOffset + innerHeight, lines.length);
+            frameLines.push(frameRowSafe(
+                `scroll ${from}-${to} of ${lines.length} (arrow keys)`,
+                innerWidth,
+                borderWidth
+            ));
+        } else {
+            frameLines.push(frameRowSafe(
+                "scroll with arrow keys when output overflows",
+                innerWidth,
+                borderWidth
+            ));
+        }
+
+        return `\n${frameLines.join("\n")}`;
+    };
+
+    /**
+     * Updates the spinner with the latest frame.
+     *
+     * @param force - When true, bypasses throttle.
+     * @returns Nothing.
+     */
+    const render = (force = false): void => {
+        if (closed) {
+            return;
+        }
+
+        const now = Date.now();
+
+        if (!force && now - lastRenderAt < THROTTLE_MS) {
+            return;
+        }
+
+        lastRenderAt = now;
+        spinner.message(buildFrameText());
+    };
+
+    /**
+     * Pushes wrapped lines into the buffer and scrolls to the end.
+     *
+     * @param line - Raw line text.
+     * @param stream - stdout or stderr.
+     * @returns Nothing.
+     */
+    const pushLine = (line: string, stream: "stdout" | "stderr"): void => {
+        if (isCurlProgressLine(line)) {
+            return;
+        }
+
+        const normalized = normalizeTerminalText(line);
+        const tagged = stream === "stderr" ? `[stderr] ${normalized}` : normalized;
+        const { innerWidth, innerHeight } = dimensions;
+
+        for (const row of wrapToWidth(tagged, innerWidth)) {
+            lines.push(row);
+
+            if (lines.length > MAX_BUFFER_LINES) {
+                lines.splice(0, lines.length - MAX_BUFFER_LINES);
+            }
+        }
+
+        const maxOffset = Math.max(0, lines.length - innerHeight);
+        scrollOffset = maxOffset;
+
+        render();
+    };
+
+    /**
+     * Recalculates layout from the current terminal size and redraws.
+     *
+     * @returns Nothing.
+     */
+    const handleResize = (): void => {
+        if (closed) {
+            return;
+        }
+
+        const previous = dimensions;
+        dimensions = computePanelDimensions(options);
+
+        const maxOffset = Math.max(0, lines.length - dimensions.innerHeight);
+        scrollOffset = Math.min(scrollOffset, maxOffset);
+
+        if (
+            previous.innerWidth !== dimensions.innerWidth
+            || previous.innerHeight !== dimensions.innerHeight
+        ) {
+            render(true);
+        }
+    };
+
+    /**
+     * Handles arrow keys for scrolling the buffer.
+     *
+     * @param key - Raw key data from stdin.
+     * @returns Nothing.
+     */
+    const onKeyData = (key: Buffer): void => {
+        const s = key.toString();
+
+        if (s === "\x03" || s === "\x04") {
+            handleUserInterrupt();
+            return;
+        }
+
+        const { innerHeight } = dimensions;
+
+        if (s === "\x1b[A" || s === "k") {
+            scrollOffset = Math.max(0, scrollOffset - 1);
+            render(true);
+            return;
+        }
+
+        if (s === "\x1b[B" || s === "j") {
+            const maxOffset = Math.max(0, lines.length - innerHeight);
+            scrollOffset = Math.min(maxOffset, scrollOffset + 1);
+            render(true);
+            return;
+        }
+
+        if (s === "\x1b[5~" || s === "\x1b[6~") {
+            const maxOffset = Math.max(0, lines.length - innerHeight);
+            scrollOffset = s === "\x1b[5~"
+                ? Math.max(0, scrollOffset - innerHeight)
+                : Math.min(maxOffset, scrollOffset + innerHeight);
+            render(true);
+        }
+    };
+
+    /**
+     * Enables raw stdin to capture scroll keys.
+     *
+     * @returns Nothing.
+     */
+    const attachKeys = (): void => {
+        if (keyListenerAttached || !process.stdin.isTTY) {
+            return;
+        }
+
+        keyListenerAttached = true;
+        process.stdin.setRawMode(true);
+        process.stdin.resume();
+        process.stdin.on("data", onKeyData);
+
+        if (!sigintListenerAttached) {
+            sigintListenerAttached = true;
+            process.on("SIGINT", handleUserInterrupt);
+        }
+    };
+
+    /**
+     * Disables raw stdin.
+     *
+     * @returns Nothing.
+     */
+    const detachKeys = (): void => {
+        if (!keyListenerAttached) {
+            return;
+        }
+
+        keyListenerAttached = false;
+        process.stdin.off("data", onKeyData);
+
+        if (sigintListenerAttached) {
+            sigintListenerAttached = false;
+            process.removeListener("SIGINT", handleUserInterrupt);
+        }
+
+        if (process.stdin.isTTY && typeof process.stdin.setRawMode === "function") {
+            try {
+                process.stdin.setRawMode(false);
+            } catch {
+                // Ignore
+            }
+        }
+
+        process.stdin.pause();
+    };
+
+    /**
+     * Subscribes to terminal resize events.
+     *
+     * @returns Nothing.
+     */
+    const attachResize = (): void => {
+        if (resizeListenerAttached || options.useFullTerminal === false) {
+            return;
+        }
+
+        resizeListenerAttached = true;
+        process.stdout.on("resize", handleResize);
+    };
+
+    /**
+     * Unsubscribes from terminal resize events.
+     *
+     * @returns Nothing.
+     */
+    const detachResize = (): void => {
+        if (!resizeListenerAttached) {
+            return;
+        }
+
+        resizeListenerAttached = false;
+        process.stdout.off("resize", handleResize);
+    };
+
+    /**
+     * Stops the spinner and restores stdin for clack.
+     *
+     * @param message - Final status line.
+     * @returns Nothing.
+     */
+    const finalize = (message: string): void => {
+        if (closed) {
+            return;
+        }
+
+        closed = true;
+        detachKeys();
+        detachResize();
+        spinner.stop(message);
+        options.onReleaseTerminal?.();
+        releaseTerminal();
+    };
+
+    attachKeys();
+    attachResize();
+    spinner.start(buildFrameText());
+
+    const handlers = StreamLineBuffer.create(pushLine);
+
+    return {
+        handlers,
+
+        setPhase(phaseText: string): void {
+            if (closed || phaseText === phase) {
+                return;
+            }
+
+            phase = phaseText;
+            render(true);
+        },
+
+        appendLine(line: string, stream: "stdout" | "stderr" = "stdout"): void {
+            if (closed) {
+                return;
+            }
+
+            pushLine(line, stream);
+        },
+
+        stop(message: string): void {
+            finalize(message);
+        },
+
+        fail(message: string): void {
+            const dump = lines.join("\n");
+            finalize(message);
+
+            if (dump) {
+                clack.note(dump, "Output");
+            }
+        }
+    };
 }
