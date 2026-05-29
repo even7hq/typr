@@ -7,7 +7,7 @@
 From the Typr monorepo root:
 
 ```bash
-yarn docs:dev
+yarn docs:watch
 yarn build:all
 ```
 

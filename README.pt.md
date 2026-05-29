@@ -19,7 +19,7 @@ Outras linguagens podem implementar só o protocolo NDJSON abaixo; quando houver
 
 ## Site de documentação
 
-Um site [Astro](https://astro.build/) + [Starlight](https://starlight.astro.build/) vive em [`packages/docs/`](./packages/docs/). Na raiz do repositório execute `yarn docs:dev` para trabalhar nele localmente.
+Um site [Astro](https://astro.build/) + [Starlight](https://starlight.astro.build/) vive em [`packages/docs/`](./packages/docs/). Na raiz do repositório execute `yarn docs:watch` para trabalhar nele localmente.
 
 ## Transporte
 
@@ -93,7 +93,7 @@ O pacote npm **`@even7hq/js`** corresponde às entradas TypeScript e JavaScript 
 | `@even7hq/js` | Biblioteca em `packages/js` |
 | `@even7hq/docs` | Site Starlight em `packages/docs` |
 
-Instale dependências com [nayr](https://github.com/callmeteus/nayr) neste diretório: `nayr install` (gera `nayr.lock`). O Yarn Classic ainda pode correr scripts de workspace, por exemplo `yarn build` e `yarn docs:dev`.
+Instale dependências com [nayr](https://github.com/callmeteus/nayr) neste diretório: `nayr install` (gera `nayr.lock`). O Yarn Classic ainda pode correr scripts de workspace, por exemplo `yarn build` e `yarn docs:watch`.
 
 ### Migração a partir do nome de pacote `typr`
 
