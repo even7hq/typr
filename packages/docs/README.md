@@ -16,7 +16,7 @@ yarn build:all
 From this package:
 
 ```bash
-yarn dev
+yarn watch
 yarn build
 yarn preview
 ```
