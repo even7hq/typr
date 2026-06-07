@@ -8,7 +8,7 @@ export namespace ModeResolver {
     /**
      * Resolves runtime mode with precedence: explicit `settings.mode`, then `TYPR_TRANSPORT`, then `TYPR_MODE` (or legacy `LEMON_TUI_MODE`), then TUI.
      *
-     * @param settings - Optional client settings override.
+     * @param settings Optional client settings override.
      * @returns Resolved runtime mode.
      */
     export function resolve(settings?: TUIClientSettings): RuntimeMode {

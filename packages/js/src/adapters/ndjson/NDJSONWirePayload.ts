@@ -5,7 +5,7 @@ export namespace NDJSONWirePayload {
     /**
      * Converts prompt options into a plain record safe to place on the wire.
      *
-     * @param options - Prompt options object.
+     * @param options Prompt options object.
      * @returns Serializable payload without `autoPolicy` or functions.
      */
     export function fromOptions(options: object): Record<string, unknown> {

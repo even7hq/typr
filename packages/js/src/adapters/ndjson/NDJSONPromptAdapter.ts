@@ -56,7 +56,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     /**
      * Creates a new NDJSON prompt adapter.
      *
-     * @param transport - Shared NDJSON stdio transport.
+     * @param transport Shared NDJSON stdio transport.
      */
     constructor(private readonly transport: NDJSONStdioTransport) {
         super();
@@ -66,7 +66,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     /**
      * Handles inbound wire messages from stdin.
      *
-     * @param message - Parsed Typr wire message.
+     * @param message Parsed Typr wire message.
      * @returns Nothing.
      */
     private onInbound(message: TyprWireMessage): void {
@@ -99,8 +99,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     /**
      * Emits a structured terminal event on stdout.
      *
-     * @param name - Event name (for example `LOG`, `SPINNER_START`).
-     * @param payload - Event payload data.
+     * @param name Event name (for example `LOG`, `SPINNER_START`).
+     * @param payload Event payload data.
      * @returns Nothing.
      */
     private emitEvent(name: string, payload: Record<string, unknown>): void {
@@ -119,8 +119,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     /**
      * Sends an RPC request and waits for a matching response or error frame.
      *
-     * @param path - Dot-separated procedure path (for example `adapter.confirm`).
-     * @param input - JSON-serializable input payload.
+     * @param path Dot-separated procedure path (for example `adapter.confirm`).
+     * @param input JSON-serializable input payload.
      * @returns Resolved result from the host.
      */
     private async rpc(path: string, input: Record<string, unknown>): Promise<unknown> {
@@ -142,7 +142,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Text prompt options.
+     * @param options Text prompt options.
      * @returns Host provided string value.
      */
     public async text(options: TextPromptOptions): Promise<unknown> {
@@ -150,7 +150,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Password prompt options.
+     * @param options Password prompt options.
      * @returns Host provided string value.
      */
     public async password(options: PasswordPromptOptions): Promise<unknown> {
@@ -158,7 +158,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Confirm prompt options.
+     * @param options Confirm prompt options.
      * @returns Host provided boolean value.
      */
     public async confirm(options: ConfirmPromptOptions): Promise<unknown> {
@@ -166,7 +166,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Date prompt options.
+     * @param options Date prompt options.
      * @returns Host provided date value.
      */
     public async date(options: DatePromptOptions): Promise<unknown> {
@@ -174,7 +174,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiline prompt options.
+     * @param options Multiline prompt options.
      * @returns Host provided string value.
      */
     public async multiline(options: MultilinePromptOptions): Promise<unknown> {
@@ -182,7 +182,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Path prompt options.
+     * @param options Path prompt options.
      * @returns Host provided string value.
      */
     public async path(options: PathPromptOptions): Promise<unknown> {
@@ -190,7 +190,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select prompt options.
+     * @param options Select prompt options.
      * @returns Host provided option value.
      */
     public async select(options: SelectPromptOptions): Promise<unknown> {
@@ -198,7 +198,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select key prompt options.
+     * @param options Select key prompt options.
      * @returns Host provided option value.
      */
     public async selectKey(options: SelectKeyPromptOptions): Promise<unknown> {
@@ -206,7 +206,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiselect prompt options.
+     * @param options Multiselect prompt options.
      * @returns Host provided values.
      */
     public async multiselect(options: MultiselectPromptOptions): Promise<unknown> {
@@ -214,7 +214,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete prompt options.
+     * @param options Autocomplete prompt options.
      * @returns Host provided option value.
      */
     public async autocomplete(options: AutocompletePromptOptions): Promise<unknown> {
@@ -226,7 +226,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete multiselect prompt options.
+     * @param options Autocomplete multiselect prompt options.
      * @returns Host provided values.
      */
     public async autocompleteMultiselect(options: AutocompleteMultiselectPromptOptions): Promise<unknown> {
@@ -234,7 +234,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Group multiselect prompt options.
+     * @param options Group multiselect prompt options.
      * @returns Host provided values.
      */
     public async groupMultiselect(options: GroupMultiselectPromptOptions): Promise<unknown> {
@@ -242,8 +242,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param prompts - Prompt group definition.
-     * @param options - Optional group options.
+     * @param prompts Prompt group definition.
+     * @param options Optional group options.
      * @returns Never: unsupported over NDJSON.
      */
     public async group<T>(_prompts: GroupPrompts<T>, _options?: GroupPromptOptions<T>): Promise<Record<keyof T, unknown>> {
@@ -251,8 +251,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param tasks - Task list.
-     * @param opts - Optional common options.
+     * @param tasks Task list.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public async tasks(tasks: TaskRunnerItem[], opts?: SessionCommonOptions): Promise<void> {
@@ -264,7 +264,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Task log options.
+     * @param options Task log options.
      * @returns Task log proxy emitting terminal events.
      */
     public taskLog(options: TaskLogFactoryOptions): TUITaskLogHandle {
@@ -301,7 +301,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param opts - Optional spinner options.
+     * @param opts Optional spinner options.
      * @returns Spinner proxy emitting terminal events.
      */
     public spinner(opts?: SpinnerFactoryOptions): TUISpinner {
@@ -340,7 +340,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Progress options.
+     * @param options Progress options.
      * @returns Progress proxy emitting terminal events.
      */
     public progress(options: ProgressPromptOptions): TUIProgress {
@@ -382,8 +382,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Intro text.
-     * @param opts - Optional common options.
+     * @param message Intro text.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public intro(message?: string, opts?: SessionCommonOptions): void {
@@ -391,8 +391,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Outro text.
-     * @param opts - Optional common options.
+     * @param message Outro text.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public outro(message?: string, opts?: SessionCommonOptions): void {
@@ -400,9 +400,9 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Box body.
-     * @param title - Optional title.
-     * @param opts - Optional box options.
+     * @param message Box body.
+     * @param title Optional title.
+     * @param opts Optional box options.
      * @returns Nothing.
      */
     public box(message?: string, title?: string, opts?: BoxPromptOptions): void {
@@ -410,9 +410,9 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Note body.
-     * @param title - Optional title.
-     * @param opts - Optional note options.
+     * @param message Note body.
+     * @param title Optional title.
+     * @param opts Optional note options.
      * @returns Nothing.
      */
     public note(message?: string, title?: string, opts?: NoteSessionOptions): void {
@@ -420,8 +420,8 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Cancel message.
-     * @param opts - Optional common options.
+     * @param message Cancel message.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public cancel(message?: string, opts?: SessionCommonOptions): void {

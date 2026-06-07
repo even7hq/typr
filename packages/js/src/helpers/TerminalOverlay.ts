@@ -27,9 +27,9 @@ export namespace TerminalOverlay {
     /**
      * Moves to a 1-based row, clears it, and writes text (no full-frame erase).
      *
-     * @param output - Stream to write to.
-     * @param row - One-based row index.
-     * @param text - Line content.
+     * @param output Stream to write to.
+     * @param row One-based row index.
+     * @param text Line content.
      * @returns Nothing.
      */
     function writeRow(output: NodeJS.WriteStream, row: number, text: string): void {
@@ -39,7 +39,7 @@ export namespace TerminalOverlay {
     /**
      * Switches to the terminal alternate screen (isolates live UI from scrollback).
      *
-     * @param output - Stream to write to.
+     * @param output Stream to write to.
      * @returns Nothing.
      */
     export function enterAltScreen(output: NodeJS.WriteStream): void {
@@ -53,7 +53,7 @@ export namespace TerminalOverlay {
     /**
      * Restores the main screen and shows the text cursor.
      *
-     * @param output - Stream to write to.
+     * @param output Stream to write to.
      * @returns Nothing.
      */
     export function leaveAltScreen(output: NodeJS.WriteStream): void {
@@ -67,9 +67,9 @@ export namespace TerminalOverlay {
     /**
      * Paints only rows that changed since the last frame (requires alt screen or fixed origin).
      *
-     * @param output - Stream to write to (usually stdout).
-     * @param lines - Frame rows from top to bottom.
-     * @param state - Mutable paint state for this overlay.
+     * @param output Stream to write to (usually stdout).
+     * @param lines Frame rows from top to bottom.
+     * @param state Mutable paint state for this overlay.
      * @returns Whether any row was updated.
      */
     export function paintDiff(
@@ -107,9 +107,9 @@ export namespace TerminalOverlay {
     /**
      * Paints multiline text in place on a TTY (full frame; prefer {@link paintDiff}).
      *
-     * @param output - Stream to write to (usually stdout).
-     * @param text - Full frame without a leading newline.
-     * @param state - Mutable paint state for this overlay.
+     * @param output Stream to write to (usually stdout).
+     * @param text Full frame without a leading newline.
+     * @param state Mutable paint state for this overlay.
      * @returns Whether the frame was painted.
      */
     export function paint(
@@ -124,9 +124,9 @@ export namespace TerminalOverlay {
     /**
      * Paints a single status line in place on a TTY.
      *
-     * @param output - Stream to write to.
-     * @param line - Status text.
-     * @param state - Mutable paint state.
+     * @param output Stream to write to.
+     * @param line Status text.
+     * @param state Mutable paint state.
      * @returns Nothing.
      */
     export function paintLine(
@@ -152,8 +152,8 @@ export namespace TerminalOverlay {
     /**
      * Clears a previously painted overlay without writing a trailing status line.
      *
-     * @param output - Stream to write to.
-     * @param state - Mutable paint state.
+     * @param output Stream to write to.
+     * @param state Mutable paint state.
      * @returns Nothing.
      */
     export function clear(output: NodeJS.WriteStream, state: PaintState): void {
@@ -175,9 +175,9 @@ export namespace TerminalOverlay {
     /**
      * Clears the overlay and writes a final status line followed by a newline.
      *
-     * @param output - Stream to write to.
-     * @param message - Final status line.
-     * @param state - Mutable paint state.
+     * @param output Stream to write to.
+     * @param message Final status line.
+     * @param state Mutable paint state.
      * @returns Nothing.
      */
     export function finish(

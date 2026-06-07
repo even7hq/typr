@@ -38,7 +38,7 @@ namespace AutoAdapterLog {
     /**
      * Drains an iterable without producing output.
      *
-     * @param iterable - Iterable or async iterable of chunks.
+     * @param iterable Iterable or async iterable of chunks.
      * @returns Promise resolved when iteration completes.
      */
     async function drain(iterable: Iterable<string> | AsyncIterable<string>): Promise<void> {
@@ -189,14 +189,14 @@ export class AutoAdapter extends AbstractAdapter {
     /**
      * Creates a new AUTO adapter.
      *
-     * @param policy - Policy applied when defaults are missing.
+     * @param policy Policy applied when defaults are missing.
      */
     constructor(private readonly policy: AutoPolicy) {
         super();
     }
 
     /**
-     * @param options - Text prompt options.
+     * @param options Text prompt options.
      * @returns Resolved text.
      */
     public async text(options: TextPromptOptions): Promise<string> {
@@ -212,7 +212,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Password prompt options.
+     * @param options Password prompt options.
      * @returns Resolved password string.
      */
     public async password(options: PasswordPromptOptions): Promise<string> {
@@ -224,7 +224,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Confirm prompt options.
+     * @param options Confirm prompt options.
      * @returns Resolved confirmation flag.
      */
     public async confirm(options: ConfirmPromptOptions): Promise<boolean> {
@@ -240,7 +240,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Date prompt options.
+     * @param options Date prompt options.
      * @returns Resolved date.
      */
     public async date(options: DatePromptOptions): Promise<Date> {
@@ -260,7 +260,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiline prompt options.
+     * @param options Multiline prompt options.
      * @returns Resolved text.
      */
     public async multiline(options: MultilinePromptOptions): Promise<string> {
@@ -276,7 +276,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Path prompt options.
+     * @param options Path prompt options.
      * @returns Resolved path string.
      */
     public async path(options: PathPromptOptions): Promise<string> {
@@ -292,7 +292,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select prompt options.
+     * @param options Select prompt options.
      * @returns First option value.
      */
     public async select(options: SelectPromptOptions): Promise<string> {
@@ -306,7 +306,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select key prompt options.
+     * @param options Select key prompt options.
      * @returns First option value.
      */
     public async selectKey(options: SelectKeyPromptOptions): Promise<string> {
@@ -320,7 +320,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiselect prompt options.
+     * @param options Multiselect prompt options.
      * @returns Selected values.
      */
     public async multiselect(options: MultiselectPromptOptions): Promise<string[]> {
@@ -336,7 +336,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete prompt options.
+     * @param options Autocomplete prompt options.
      * @returns First option value when available.
      */
     public async autocomplete(options: AutocompletePromptOptions): Promise<string> {
@@ -348,7 +348,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete multiselect prompt options.
+     * @param options Autocomplete multiselect prompt options.
      * @returns Selected values.
      */
     public async autocompleteMultiselect(options: AutocompleteMultiselectPromptOptions): Promise<string[]> {
@@ -356,7 +356,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Group multiselect prompt options.
+     * @param options Group multiselect prompt options.
      * @returns Selected values.
      */
     public async groupMultiselect(options: GroupMultiselectPromptOptions): Promise<string[]> {
@@ -381,8 +381,8 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param prompts - Prompt group definition.
-     * @param options - Optional group options.
+     * @param prompts Prompt group definition.
+     * @param options Optional group options.
      * @returns Aggregated results.
      */
     public async group<T>(prompts: GroupPrompts<T>, options?: GroupPromptOptions<T>): Promise<Record<keyof T, unknown>> {
@@ -402,8 +402,8 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param tasks - Task list.
-     * @param opts - Optional common options.
+     * @param tasks Task list.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public async tasks(tasks: TaskRunnerItem[], opts?: SessionCommonOptions): Promise<void> {
@@ -419,7 +419,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Task log options.
+     * @param options Task log options.
      * @returns Silent task log handle.
      */
     public taskLog(options: TaskLogFactoryOptions): TUITaskLogHandle {
@@ -428,7 +428,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param opts - Optional spinner options.
+     * @param opts Optional spinner options.
      * @returns Silent spinner handle.
      */
     public spinner(opts?: SpinnerFactoryOptions): TUISpinner {
@@ -437,7 +437,7 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Progress options.
+     * @param options Progress options.
      * @returns Silent progress handle.
      */
     public progress(options: ProgressPromptOptions): TUIProgress {
@@ -446,8 +446,8 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Intro text.
-     * @param opts - Optional common options.
+     * @param message Intro text.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public intro(message?: string, opts?: SessionCommonOptions): void {
@@ -456,8 +456,8 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Outro text.
-     * @param opts - Optional common options.
+     * @param message Outro text.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public outro(message?: string, opts?: SessionCommonOptions): void {
@@ -466,9 +466,9 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Box body.
-     * @param title - Optional title.
-     * @param opts - Optional box options.
+     * @param message Box body.
+     * @param title Optional title.
+     * @param opts Optional box options.
      * @returns Nothing.
      */
     public box(message?: string, title?: string, opts?: BoxPromptOptions): void {
@@ -478,9 +478,9 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Note body.
-     * @param title - Optional title.
-     * @param opts - Optional note options.
+     * @param message Note body.
+     * @param title Optional title.
+     * @param opts Optional note options.
      * @returns Nothing.
      */
     public note(message?: string, title?: string, opts?: NoteSessionOptions): void {
@@ -490,8 +490,8 @@ export class AutoAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Cancel message.
-     * @param opts - Optional common options.
+     * @param message Cancel message.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public cancel(message?: string, opts?: SessionCommonOptions): void {

@@ -15,7 +15,7 @@ export namespace ClackPromptMapper {
     /**
      * Maps select style options into clack option objects.
      *
-     * @param options - Option list with string values.
+     * @param options Option list with string values.
      * @returns Clack compatible option list.
      */
     export function mapSelectOptions(

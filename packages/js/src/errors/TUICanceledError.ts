@@ -5,7 +5,7 @@ export class TUICanceledError extends Error {
     /**
      * Creates a new cancel error.
      *
-     * @param message - Optional diagnostic message.
+     * @param message Optional diagnostic message.
      * @returns Nothing.
      */
     constructor(message = "TUI_CANCELED") {

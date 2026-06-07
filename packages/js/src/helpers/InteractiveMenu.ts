@@ -114,7 +114,7 @@ export interface InteractiveMenuOptions {
 /**
  * Finds the sub-tree that matches a given command prefix, or returns the full tree when empty.
  *
- * @param cmdParts - Parts of the command already typed (e.g. ["db", "migration"]).
+ * @param cmdParts Parts of the command already typed (e.g. ["db", "migration"]).
  * @returns The matching sub-tree or null when the prefix is unknown.
  */
 function findSubTree(cmdParts: string[]): MenuItem[] | null {
@@ -127,7 +127,7 @@ function findSubTree(cmdParts: string[]): MenuItem[] | null {
     /**
      * Recursively searches menu groups for a matching prefix.
      *
-     * @param items - Current menu level.
+     * @param items Current menu level.
      * @returns Matching children, or null when not found.
      */
     function search(items: MenuItem[]): MenuItem[] | null {
@@ -150,10 +150,10 @@ function findSubTree(cmdParts: string[]): MenuItem[] | null {
 /**
  * Presents a nested select menu using the shared adapter.
  *
- * @param adapter - Prompt adapter for the active runtime mode.
- * @param items - Menu items for the current level.
- * @param breadcrumb - Breadcrumb label for the prompt message.
- * @param options - Optional cancel and invalid handlers.
+ * @param adapter Prompt adapter for the active runtime mode.
+ * @param items Menu items for the current level.
+ * @param breadcrumb Breadcrumb label for the prompt message.
+ * @param options Optional cancel and invalid handlers.
  * @returns Resolved command string.
  */
 async function presentMenu(
@@ -213,9 +213,9 @@ async function presentMenu(
 /**
  * Launches the interactive menu, optionally scoped to a partial command path.
  *
- * @param adapter - Prompt adapter for the active runtime mode.
- * @param cmdParts - Parts of the command already typed (may be empty).
- * @param options - Optional binary name and exit overrides.
+ * @param adapter Prompt adapter for the active runtime mode.
+ * @param cmdParts Parts of the command already typed (may be empty).
+ * @param options Optional binary name and exit overrides.
  * @returns Fully qualified command string chosen by the user.
  */
 export async function runInteractiveMenu(

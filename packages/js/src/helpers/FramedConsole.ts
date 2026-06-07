@@ -71,8 +71,8 @@ export interface FramedConsoleOptions {
         /**
          * Logs one completed stream line.
          *
-         * @param line - Line text without trailing newline.
-         * @param stream - stdout or stderr.
+         * @param line Line text without trailing newline.
+         * @param stream stdout or stderr.
          * @returns Nothing.
          */
         onLine: (line: string, stream: "stdout" | "stderr") => void;
@@ -80,7 +80,7 @@ export interface FramedConsoleOptions {
         /**
          * Logs a phase/status update.
          *
-         * @param phase - Phase description.
+         * @param phase Phase description.
          * @returns Nothing.
          */
         onPhase: (phase: string) => void;
@@ -88,7 +88,7 @@ export interface FramedConsoleOptions {
         /**
          * Logs a success status when the panel stops cleanly.
          *
-         * @param message - Final status line.
+         * @param message Final status line.
          * @returns Nothing.
          */
         onSuccess?: (message: string) => void;
@@ -96,7 +96,7 @@ export interface FramedConsoleOptions {
         /**
          * Logs a failure status when the panel fails.
          *
-         * @param message - Failure status line.
+         * @param message Failure status line.
          * @returns Nothing.
          */
         onError?: (message: string) => void;
@@ -115,7 +115,7 @@ export interface FramedConsoleSession {
     /**
      * Updates the subtitle line under the title (phase / connection status).
      *
-     * @param phase - Phase description.
+     * @param phase Phase description.
      * @returns Nothing.
      */
     setPhase(phase: string): void;
@@ -128,8 +128,8 @@ export interface FramedConsoleSession {
     /**
      * Appends a single line to the scroll buffer (local logs, not from a stream).
      *
-     * @param line - Text line without trailing newline.
-     * @param stream - Optional stream tag for styling.
+     * @param line Text line without trailing newline.
+     * @param stream Optional stream tag for styling.
      * @returns Nothing.
      */
     appendLine(line: string, stream?: "stdout" | "stderr"): void;
@@ -137,7 +137,7 @@ export interface FramedConsoleSession {
     /**
      * Closes the panel and prints a success status below the frame.
      *
-     * @param message - Final status line.
+     * @param message Final status line.
      * @returns Nothing.
      */
     stop(message: string): void;
@@ -145,7 +145,7 @@ export interface FramedConsoleSession {
     /**
      * Closes the panel and prints failure output below.
      *
-     * @param message - Failure status line.
+     * @param message Failure status line.
      * @returns Nothing.
      */
     fail(message: string): void;
@@ -195,7 +195,7 @@ const BOX = {
 /**
  * Strips ANSI escape sequences from a string.
  *
- * @param text - Text that may contain ANSI codes.
+ * @param text Text that may contain ANSI codes.
  * @returns Plain text without ANSI sequences.
  */
 function stripAnsi(text: string): string {
@@ -205,7 +205,7 @@ function stripAnsi(text: string): string {
 /**
  * Returns the terminal display width of a string.
  *
- * @param text - Text to measure.
+ * @param text Text to measure.
  * @returns Visible width in terminal columns.
  */
 function displayWidth(text: string): number {
@@ -215,7 +215,7 @@ function displayWidth(text: string): number {
 /**
  * Iterates grapheme clusters (emoji sequences stay intact).
  *
- * @param text - Plain text without ANSI codes.
+ * @param text Plain text without ANSI codes.
  * @returns Grapheme segments in order.
  */
 function* graphemes(text: string): Generator<string> {
@@ -229,7 +229,7 @@ function* graphemes(text: string): Generator<string> {
 /**
  * Normalizes remote text for stable terminal column counting.
  *
- * @param text - Raw line from a stream.
+ * @param text Raw line from a stream.
  * @returns Text safe to measure and render inside the frame.
  */
 function normalizeTerminalText(text: string): string {
@@ -241,8 +241,8 @@ function normalizeTerminalText(text: string): string {
 /**
  * Truncates text to a maximum visible width, appending an ellipsis when needed.
  *
- * @param text - Text to truncate.
- * @param maxWidth - Maximum visible columns.
+ * @param text Text to truncate.
+ * @param maxWidth Maximum visible columns.
  * @returns Truncated text.
  */
 function truncateToWidth(text: string, maxWidth: number): string {
@@ -278,8 +278,8 @@ function truncateToWidth(text: string, maxWidth: number): string {
 /**
  * Pads text on the right to an exact visible width.
  *
- * @param text - Text to pad.
- * @param targetWidth - Target visible width.
+ * @param text Text to pad.
+ * @param targetWidth Target visible width.
  * @returns Padded text.
  */
 function padToWidth(text: string, targetWidth: number): string {
@@ -296,8 +296,8 @@ function padToWidth(text: string, targetWidth: number): string {
 /**
  * Builds one framed row: │ + pad + content + pad + │.
  *
- * @param content - Inner content.
- * @param innerWidth - Content column width.
+ * @param content Inner content.
+ * @param innerWidth Content column width.
  * @returns A full terminal row.
  */
 function frameRow(content: string, innerWidth: number): string {
@@ -309,8 +309,8 @@ function frameRow(content: string, innerWidth: number): string {
 /**
  * Shrinks or pads a full frame line until its visible width matches the target.
  *
- * @param line - A complete top, body, or bottom row.
- * @param targetWidth - Required visible width in columns.
+ * @param line A complete top, body, or bottom row.
+ * @param targetWidth Required visible width in columns.
  * @returns A line that fits within targetWidth.
  */
 function fitLineToWidth(line: string, targetWidth: number): string {
@@ -334,9 +334,9 @@ function fitLineToWidth(line: string, targetWidth: number): string {
 /**
  * Builds a body row and guarantees it does not exceed borderWidth.
  *
- * @param content - Inner content.
- * @param innerWidth - Content column width.
- * @param borderWidth - Full outer row width.
+ * @param content Inner content.
+ * @param innerWidth Content column width.
+ * @param borderWidth Full outer row width.
  * @returns A border-aligned row.
  */
 function frameRowSafe(content: string, innerWidth: number, borderWidth: number): string {
@@ -354,7 +354,7 @@ function frameRowSafe(content: string, innerWidth: number, borderWidth: number):
 /**
  * Returns true when the line looks like curl progress noise.
  *
- * @param line - Single output line.
+ * @param line Single output line.
  * @returns Whether the line should be hidden.
  */
 function isCurlProgressLine(line: string): boolean {
@@ -377,8 +377,8 @@ function isCurlProgressLine(line: string): boolean {
 /**
  * Wraps or truncates text to fit inside the inner panel width.
  *
- * @param text - Text to fit.
- * @param width - Maximum visible width.
+ * @param text Text to fit.
+ * @param width Maximum visible width.
  * @returns Lines that fit the inner width.
  */
 function wrapToWidth(text: string, width: number): string[] {
@@ -417,8 +417,8 @@ function wrapToWidth(text: string, width: number): string[] {
 /**
  * Builds the top border row with a centered title.
  *
- * @param title - Panel title.
- * @param borderWidth - Full outer width of the panel.
+ * @param title Panel title.
+ * @param borderWidth Full outer width of the panel.
  * @returns Top border line.
  */
 function buildTopBorder(title: string, borderWidth: number): string {
@@ -441,7 +441,7 @@ function buildTopBorder(title: string, borderWidth: number): string {
 /**
  * Builds the bottom border row with exact outer width.
  *
- * @param borderWidth - Full outer width of the panel.
+ * @param borderWidth Full outer width of the panel.
  * @returns Bottom border line.
  */
 function buildBottomBorder(borderWidth: number): string {
@@ -453,7 +453,7 @@ function buildBottomBorder(borderWidth: number): string {
 /**
  * Computes panel dimensions from the current terminal size and options.
  *
- * @param options - Panel options.
+ * @param options Panel options.
  * @returns Layout dimensions for the frame.
  */
 function computePanelDimensions(options: FramedConsoleOptions): PanelDimensions {
@@ -522,7 +522,7 @@ export namespace FramedConsole {
     /**
      * Creates a framed terminal panel when stdout is a TTY; falls back to plain logging in CI.
      *
-     * @param options - Panel options.
+     * @param options Panel options.
      * @returns Session with stream handlers and scroll UI.
      */
     export function create(options: FramedConsoleOptions): FramedConsoleSession {
@@ -545,7 +545,7 @@ export namespace FramedConsole {
 /**
  * Plain logging fallback when there is no TTY.
  *
- * @param options - Panel options.
+ * @param options Panel options.
  * @returns A session that logs each line.
  */
 function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleSession {
@@ -554,8 +554,8 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
     /**
      * Logs one line with a title prefix.
      *
-     * @param line - Line text.
-     * @param stream - stdout or stderr.
+     * @param line Line text.
+     * @param stream stdout or stderr.
      * @returns Nothing.
      */
     const logLine = (line: string, stream: "stdout" | "stderr"): void => {
@@ -618,7 +618,7 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
 /**
  * Interactive panel rendered via clack spinner only (no stdout cursor control).
  *
- * @param options - Panel options.
+ * @param options Panel options.
  * @returns Interactive framed session.
  */
 function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleSession {
@@ -755,7 +755,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     /**
      * Schedules a trailing debounced repaint (coalesces rapid SSH lines).
      *
-     * @param force - When true, paints immediately (scroll keys, phase changes).
+     * @param force When true, paints immediately (scroll keys, phase changes).
      * @returns Nothing.
      */
     const render = (force = false): void => {
@@ -786,8 +786,8 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     /**
      * Pushes wrapped lines into the buffer and scrolls to the end.
      *
-     * @param line - Raw line text.
-     * @param stream - stdout or stderr.
+     * @param line Raw line text.
+     * @param stream stdout or stderr.
      * @returns Nothing.
      */
     const pushLine = (line: string, stream: "stdout" | "stderr"): void => {
@@ -841,7 +841,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     /**
      * Handles arrow keys for scrolling the buffer.
      *
-     * @param key - Raw key data from stdin.
+     * @param key Raw key data from stdin.
      * @returns Nothing.
      */
     const onKeyData = (key: Buffer): void => {
@@ -958,7 +958,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     /**
      * Stops the spinner and restores stdin for clack.
      *
-     * @param message - Final status line.
+     * @param message Final status line.
      * @returns Nothing.
      */
     const finalize = (message: string): void => {

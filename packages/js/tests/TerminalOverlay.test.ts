@@ -22,7 +22,7 @@ function createMockTty(): NodeJS.WriteStream & { chunks: string[] } {
 /**
  * Joins all write chunks into one string.
  *
- * @param output - Mock stream.
+ * @param output Mock stream.
  * @returns Concatenated output.
  */
 function written(output: NodeJS.WriteStream & { chunks: string[] }): string {

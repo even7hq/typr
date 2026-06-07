@@ -21,8 +21,8 @@ export class NDJSONStdioTransport extends AbstractTransport {
     /**
      * Creates a new NDJSON stdio transport.
      *
-     * @param input - Readable stream for inbound NDJSON lines.
-     * @param output - Writable stream for outbound NDJSON lines.
+     * @param input Readable stream for inbound NDJSON lines.
+     * @param output Writable stream for outbound NDJSON lines.
      */
     constructor(
         private readonly input: NodeJS.ReadableStream = process.stdin,
@@ -34,7 +34,7 @@ export class NDJSONStdioTransport extends AbstractTransport {
     /**
      * Sends a wire message as one NDJSON line to the output stream.
      *
-     * @param message - Wire message to send.
+     * @param message Wire message to send.
      * @returns Nothing.
      */
     public send(message: TyprWireMessage): void {
@@ -44,7 +44,7 @@ export class NDJSONStdioTransport extends AbstractTransport {
     /**
      * Registers a handler for inbound wire messages.
      *
-     * @param handler - Handler called for each decoded message.
+     * @param handler Handler called for each decoded message.
      * @returns Nothing.
      */
     public onMessage(handler: (message: TyprWireMessage) => void): void {

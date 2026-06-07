@@ -15,9 +15,9 @@ export class TyprWireRpcError extends Error {
     /**
      * Creates a new RPC error wrapper.
      *
-     * @param code - Host error code.
-     * @param message - Human-readable message.
-     * @param data - Optional structured payload.
+     * @param code Host error code.
+     * @param message Human-readable message.
+     * @param data Optional structured payload.
      */
     constructor(code: string, message: string, data?: Record<string, unknown>) {
         super(message);

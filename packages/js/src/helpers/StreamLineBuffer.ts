@@ -7,7 +7,7 @@ export interface StreamLineHandlers {
     /**
      * Appends stdout bytes to the line buffer.
      *
-     * @param chunk - Raw stdout chunk.
+     * @param chunk Raw stdout chunk.
      * @returns Nothing.
      */
     onStdout(chunk: Buffer): void;
@@ -15,7 +15,7 @@ export interface StreamLineHandlers {
     /**
      * Appends stderr bytes to the line buffer.
      *
-     * @param chunk - Raw stderr chunk.
+     * @param chunk Raw stderr chunk.
      * @returns Nothing.
      */
     onStderr(chunk: Buffer): void;
@@ -37,7 +37,7 @@ export namespace StreamLineBuffer {
     /**
      * Creates stdout/stderr handlers that emit one line per newline.
      *
-     * @param onLine - Called for each complete non-empty line.
+     * @param onLine Called for each complete non-empty line.
      * @returns Stream handlers with a flush method.
      */
     export function create(
@@ -49,8 +49,8 @@ export namespace StreamLineBuffer {
         /**
          * Feeds bytes into a per-stream buffer and emits completed lines.
          *
-         * @param kind - Stream identifier.
-         * @param chunk - Raw bytes to append.
+         * @param kind Stream identifier.
+         * @param chunk Raw bytes to append.
          * @returns Nothing.
          */
         const feed = (kind: "stdout" | "stderr", chunk: string): void => {
@@ -101,8 +101,8 @@ export namespace StreamLineBuffer {
         /**
          * Emits a trailing partial line if the stream ended without a newline.
          *
-         * @param kind - Stream identifier.
-         * @param buf - Current buffer contents.
+         * @param kind Stream identifier.
+         * @param buf Current buffer contents.
          * @returns Nothing.
          */
         const flushStream = (kind: "stdout" | "stderr", buf: string): void => {

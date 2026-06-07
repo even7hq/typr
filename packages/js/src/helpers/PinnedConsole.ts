@@ -518,7 +518,7 @@ export class PinnedConsole {
      * Formats the arguments to a string using util.format (supports %d, %s, etc.).
      * Error values always include their stack trace.
      *
-     * @param args - Arguments passed to a console method.
+     * @param args Arguments passed to a console method.
      * @returns The formatted log line(s).
      */
     private formatArguments(args: any[]): string {
@@ -651,7 +651,7 @@ export class PinnedConsole {
 /**
  * Installs a pinned console with header and footer.
  *
- * @param options - Configuration options for the pinned console.
+ * @param options Configuration options for the pinned console.
  * @returns A console hook instance.
  */
 export function installPinnedConsole(options: PinnedConsoleOptions = {}): PinnedConsole {

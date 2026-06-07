@@ -74,7 +74,7 @@ export const log = createLogProxy();
 /**
  * Initializes or replaces the global Typr session (call once at process entry).
  *
- * @param settings - Optional client settings (mode, withGuide, auto policy).
+ * @param settings Optional client settings (mode, withGuide, auto policy).
  * @returns Nothing.
  */
 export function initTypr(settings: TUIClientSettings = {}): void {
@@ -95,7 +95,7 @@ export function disposeTypr(): void {
 /**
  * Updates clack global settings when the active adapter is clack-backed.
  *
- * @param settings - Clack global settings.
+ * @param settings Clack global settings.
  * @returns Nothing.
  */
 export function updateSettings(settings: { withGuide?: boolean }): void {
@@ -107,7 +107,7 @@ export function updateSettings(settings: { withGuide?: boolean }): void {
 }
 
 /**
- * @param options - Confirm prompt options.
+ * @param options Confirm prompt options.
  * @returns User answer or symbol cancel value.
  */
 export function confirm(options: ConfirmPromptOptions): Promise<unknown> {
@@ -115,7 +115,7 @@ export function confirm(options: ConfirmPromptOptions): Promise<unknown> {
 }
 
 /**
- * @param options - Text prompt options.
+ * @param options Text prompt options.
  * @returns User input or symbol cancel value.
  */
 export function text(options: TextPromptOptions): Promise<unknown> {
@@ -123,7 +123,7 @@ export function text(options: TextPromptOptions): Promise<unknown> {
 }
 
 /**
- * @param options - Select prompt options.
+ * @param options Select prompt options.
  * @returns Selected value or symbol cancel value.
  */
 export function select(options: SelectPromptOptions): Promise<unknown> {
@@ -131,7 +131,7 @@ export function select(options: SelectPromptOptions): Promise<unknown> {
 }
 
 /**
- * @param options - Multiselect prompt options.
+ * @param options Multiselect prompt options.
  * @returns Selected values or symbol cancel value.
  */
 export function multiselect(options: MultiselectPromptOptions): Promise<unknown> {
@@ -139,7 +139,7 @@ export function multiselect(options: MultiselectPromptOptions): Promise<unknown>
 }
 
 /**
- * @param options - Autocomplete prompt options.
+ * @param options Autocomplete prompt options.
  * @returns Selected value(s) or symbol cancel value.
  */
 export function autocomplete(options: AutocompletePromptOptions): Promise<unknown> {
@@ -147,7 +147,7 @@ export function autocomplete(options: AutocompletePromptOptions): Promise<unknow
 }
 
 /**
- * @param opts - Optional spinner factory options.
+ * @param opts Optional spinner factory options.
  * @returns Spinner handle.
  */
 export function spinner(opts?: SpinnerFactoryOptions): TUISpinner {
@@ -155,9 +155,9 @@ export function spinner(opts?: SpinnerFactoryOptions): TUISpinner {
 }
 
 /**
- * @param message - Note body.
- * @param title - Optional title.
- * @param opts - Optional note session options.
+ * @param message Note body.
+ * @param title Optional title.
+ * @param opts Optional note session options.
  * @returns Nothing.
  */
 export function note(message?: string, title?: string, opts?: NoteSessionOptions): void {
@@ -165,8 +165,8 @@ export function note(message?: string, title?: string, opts?: NoteSessionOptions
 }
 
 /**
- * @param message - Cancellation message.
- * @param opts - Optional session options.
+ * @param message Cancellation message.
+ * @param opts Optional session options.
  * @returns Nothing.
  */
 export function cancel(message?: string, opts?: SessionCommonOptions): void {
@@ -174,8 +174,8 @@ export function cancel(message?: string, opts?: SessionCommonOptions): void {
 }
 
 /**
- * @param message - Optional intro title.
- * @param opts - Optional session options.
+ * @param message Optional intro title.
+ * @param opts Optional session options.
  * @returns Nothing.
  */
 export function intro(message?: string, opts?: SessionCommonOptions): void {
@@ -183,8 +183,8 @@ export function intro(message?: string, opts?: SessionCommonOptions): void {
 }
 
 /**
- * @param message - Optional outro text.
- * @param opts - Optional session options.
+ * @param message Optional outro text.
+ * @param opts Optional session options.
  * @returns Nothing.
  */
 export function outro(message?: string, opts?: SessionCommonOptions): void {
@@ -192,9 +192,9 @@ export function outro(message?: string, opts?: SessionCommonOptions): void {
 }
 
 /**
- * @param message - Box body.
- * @param title - Optional title.
- * @param opts - Optional box options.
+ * @param message Box body.
+ * @param title Optional title.
+ * @param opts Optional box options.
  * @returns Nothing.
  */
 export function box(message?: string, title?: string, opts?: BoxPromptOptions): void {

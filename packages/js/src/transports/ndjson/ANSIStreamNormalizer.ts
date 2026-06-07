@@ -9,7 +9,7 @@ export class ANSIStreamNormalizer {
     /**
      * Pushes a stream chunk and returns all complete normalized lines.
      *
-     * @param chunk - Raw stream chunk.
+     * @param chunk Raw stream chunk.
      * @returns Completed line array.
      */
     public push(chunk: string): string[] {

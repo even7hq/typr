@@ -5,7 +5,7 @@ export namespace RuntimeErrorUtils {
     /**
      * Returns a multi-line string with the full stack trace when available.
      *
-     * @param err - Unknown thrown or rejected value.
+     * @param err Unknown thrown or rejected value.
      * @returns Human-readable error text for stderr/logging.
      */
     export function format(err: unknown): string {

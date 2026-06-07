@@ -140,7 +140,7 @@ export type TyprWireMessage = TyprWireRequest | TyprWireResponse | TyprWireError
 /**
  * Type guard for {@link TyprWireMessage}.
  *
- * @param value - Parsed JSON value from a line.
+ * @param value Parsed JSON value from a line.
  * @returns True when the value matches the Typr v1 wire contract.
  */
 export function isTyprWireMessage(value: unknown): value is TyprWireMessage {

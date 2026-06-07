@@ -37,7 +37,7 @@ import { ClackPromptMapper, type SelectOptionLike } from "./ClackPromptMapper";
 /**
  * Strips Typr-only fields before forwarding options to @clack/prompts.
  *
- * @param options - Prompt options that may include `autoPolicy`.
+ * @param options Prompt options that may include `autoPolicy`.
  * @returns Options without `autoPolicy`.
  */
 function stripAuto<T extends { autoPolicy?: unknown }>(options: T): Omit<T, "autoPolicy"> {
@@ -54,7 +54,7 @@ export class ClackAdapter extends AbstractAdapter {
     /**
      * Updates global clack settings.
      *
-     * @param settings - Settings forwarded to clack.
+     * @param settings Settings forwarded to clack.
      * @returns Nothing.
      */
     public updateSettings(settings: { withGuide?: boolean }): void {
@@ -62,7 +62,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Text prompt options.
+     * @param options Text prompt options.
      * @returns Clack result value.
      */
     public async text(options: TextPromptOptions): Promise<unknown> {
@@ -70,7 +70,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Password prompt options.
+     * @param options Password prompt options.
      * @returns Clack result value.
      */
     public async password(options: PasswordPromptOptions): Promise<unknown> {
@@ -78,7 +78,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Confirm prompt options.
+     * @param options Confirm prompt options.
      * @returns Clack result value.
      */
     public async confirm(options: ConfirmPromptOptions): Promise<unknown> {
@@ -86,7 +86,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Date prompt options.
+     * @param options Date prompt options.
      * @returns Clack result value.
      */
     public async date(options: DatePromptOptions): Promise<unknown> {
@@ -94,7 +94,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiline prompt options.
+     * @param options Multiline prompt options.
      * @returns Clack result value.
      */
     public async multiline(options: MultilinePromptOptions): Promise<unknown> {
@@ -102,7 +102,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Path prompt options.
+     * @param options Path prompt options.
      * @returns Clack result value.
      */
     public async path(options: PathPromptOptions): Promise<unknown> {
@@ -110,7 +110,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select prompt options.
+     * @param options Select prompt options.
      * @returns Clack result value.
      */
     public async select(options: SelectPromptOptions): Promise<unknown> {
@@ -122,7 +122,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Select key prompt options.
+     * @param options Select key prompt options.
      * @returns Clack result value.
      */
     public async selectKey(options: SelectKeyPromptOptions): Promise<unknown> {
@@ -134,7 +134,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Multiselect prompt options.
+     * @param options Multiselect prompt options.
      * @returns Clack result value.
      */
     public async multiselect(options: MultiselectPromptOptions): Promise<unknown> {
@@ -146,7 +146,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete prompt options.
+     * @param options Autocomplete prompt options.
      * @returns Clack result value.
      */
     public async autocomplete(options: AutocompletePromptOptions): Promise<unknown> {
@@ -163,7 +163,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Autocomplete multiselect prompt options.
+     * @param options Autocomplete multiselect prompt options.
      * @returns Clack result value.
      */
     public async autocompleteMultiselect(options: AutocompleteMultiselectPromptOptions): Promise<unknown> {
@@ -182,7 +182,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Group multiselect prompt options.
+     * @param options Group multiselect prompt options.
      * @returns Clack result value.
      */
     public async groupMultiselect(options: GroupMultiselectPromptOptions): Promise<unknown> {
@@ -201,8 +201,8 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param prompts - Prompt group definition.
-     * @param options - Optional group options.
+     * @param prompts Prompt group definition.
+     * @param options Optional group options.
      * @returns Awaited group results.
      */
     public async group<T>(prompts: GroupPrompts<T>, options?: GroupPromptOptions<T>): Promise<Record<keyof T, unknown>> {
@@ -211,8 +211,8 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param tasks - Task list.
-     * @param opts - Optional common options.
+     * @param tasks Task list.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public async tasks(tasks: TaskRunnerItem[], opts?: SessionCommonOptions): Promise<void> {
@@ -220,7 +220,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Task log options.
+     * @param options Task log options.
      * @returns Task log handle.
      */
     public taskLog(options: TaskLogFactoryOptions): TUITaskLogHandle {
@@ -228,7 +228,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param opts - Optional spinner options.
+     * @param opts Optional spinner options.
      * @returns Spinner handle.
      */
     public spinner(opts?: SpinnerFactoryOptions): TUISpinner {
@@ -248,7 +248,7 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param options - Progress options.
+     * @param options Progress options.
      * @returns Progress handle.
      */
     public progress(options: ProgressPromptOptions): TUIProgress {
@@ -269,8 +269,8 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Intro title.
-     * @param opts - Optional common options.
+     * @param message Intro title.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public intro(message?: string, opts?: SessionCommonOptions): void {
@@ -278,8 +278,8 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Outro text.
-     * @param opts - Optional common options.
+     * @param message Outro text.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public outro(message?: string, opts?: SessionCommonOptions): void {
@@ -287,9 +287,9 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Box body.
-     * @param title - Optional title.
-     * @param opts - Optional box options.
+     * @param message Box body.
+     * @param title Optional title.
+     * @param opts Optional box options.
      * @returns Nothing.
      */
     public box(message?: string, title?: string, opts?: BoxPromptOptions): void {
@@ -297,9 +297,9 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Note body.
-     * @param title - Optional title.
-     * @param opts - Optional note options.
+     * @param message Note body.
+     * @param title Optional title.
+     * @param opts Optional note options.
      * @returns Nothing.
      */
     public note(message?: string, title?: string, opts?: NoteSessionOptions): void {
@@ -307,8 +307,8 @@ export class ClackAdapter extends AbstractAdapter {
     }
 
     /**
-     * @param message - Cancel message.
-     * @param opts - Optional common options.
+     * @param message Cancel message.
+     * @param opts Optional common options.
      * @returns Nothing.
      */
     public cancel(message?: string, opts?: SessionCommonOptions): void {

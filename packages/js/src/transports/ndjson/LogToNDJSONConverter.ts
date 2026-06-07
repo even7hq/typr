@@ -14,8 +14,8 @@ export class LogToNDJSONConverter {
     /**
      * Creates a new log converter.
      *
-     * @param sink - Callback invoked for each Typr wire log event.
-     * @param cid - Optional correlation id attached to every event.
+     * @param sink Callback invoked for each Typr wire log event.
+     * @param cid Optional correlation id attached to every event.
      */
     constructor(
         private readonly sink: (message: TyprWireEvent) => void,
@@ -25,8 +25,8 @@ export class LogToNDJSONConverter {
     /**
      * Feeds a raw chunk and emits one Typr wire event per completed line.
      *
-     * @param chunk - Raw chunk from the child stream.
-     * @param source - Stream source label.
+     * @param chunk Raw chunk from the child stream.
+     * @param source Stream source label.
      * @returns Nothing.
      */
     public writeChunk(chunk: string, source: "stdout" | "stderr"): void {
@@ -40,7 +40,7 @@ export class LogToNDJSONConverter {
     /**
      * Flushes any trailing buffered bytes as a final line.
      *
-     * @param source - Stream source label.
+     * @param source Stream source label.
      * @returns Nothing.
      */
     public flush(source: "stdout" | "stderr"): void {
@@ -54,8 +54,8 @@ export class LogToNDJSONConverter {
     /**
      * Emits a single Typr wire event for one normalized line.
      *
-     * @param message - Sanitized line text.
-     * @param source - Stream source label.
+     * @param message Sanitized line text.
+     * @param source Stream source label.
      * @returns Nothing.
      */
     private emitLine(message: string, source: "stdout" | "stderr"): void {

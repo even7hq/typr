@@ -3,7 +3,7 @@ import type { LogMessageOptions } from "@clack/prompts";
 /**
  * Yields every string chunk from an iterable or async iterable source.
  *
- * @param iterable - Iterable or async iterable of message fragments.
+ * @param iterable Iterable or async iterable of message fragments.
  * @returns Async iterable over each chunk.
  */
 export async function* eachStringChunk(iterable: Iterable<string> | AsyncIterable<string>): AsyncIterable<string> {
@@ -58,8 +58,8 @@ export type AdapterLogStreamOptions = LogMessageOptions & AdapterLogEmitOptions;
  */
 export interface AdapterLogStream {
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     message(
@@ -68,43 +68,43 @@ export interface AdapterLogStream {
     ): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     info(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     success(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     step(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     warn(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     warning(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
 
     /**
-     * @param iterable - Message chunks.
-     * @param opts - Optional stream and label options.
+     * @param iterable Message chunks.
+     * @param opts Optional stream and label options.
      * @returns Nothing.
      */
     error(iterable: Iterable<string> | AsyncIterable<string>, opts?: AdapterLogStreamOptions): Promise<void>;
@@ -117,56 +117,56 @@ export interface TerminalAdapterLog {
     /**
      * Writes a structured line with explicit level and optional label.
      *
-     * @param line - Log line payload.
+     * @param line Log line payload.
      * @returns Nothing.
      */
     write(line: AdapterLogLine): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     info(message: string, options?: AdapterLogEmitOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     success(message: string, options?: AdapterLogEmitOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     step(message: string, options?: AdapterLogEmitOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     warn(message: string, options?: AdapterLogEmitOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     warning(message: string, options?: AdapterLogEmitOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label and clack log message options.
+     * @param message Log body.
+     * @param options Optional label and clack log message options.
      * @returns Nothing.
      */
     message(message: string, options?: AdapterLogStreamOptions): void;
 
     /**
-     * @param message - Log body.
-     * @param options - Optional label.
+     * @param message Log body.
+     * @param options Optional label.
      * @returns Nothing.
      */
     error(message: string, options?: AdapterLogEmitOptions): void;
@@ -184,8 +184,8 @@ export namespace AdapterLogFormatting {
     /**
      * Prefixes a message with a label when provided.
      *
-     * @param message - Raw message.
-     * @param label - Optional label.
+     * @param message Raw message.
+     * @param label Optional label.
      * @returns Message with optional label prefix.
      */
     export function withLabel(message: string, label?: string): string {
@@ -200,7 +200,7 @@ export namespace AdapterLogFormatting {
 /**
  * Removes Typr-only `label` from stream options before passing to @clack/prompts.
  *
- * @param opts - Combined stream options.
+ * @param opts Combined stream options.
  * @returns Clack-compatible stream options or undefined.
  */
 export function toClackStreamOptions(opts?: AdapterLogStreamOptions): LogMessageOptions | undefined {

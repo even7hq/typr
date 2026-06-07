@@ -7,7 +7,7 @@ export abstract class AbstractTransport {
     /**
      * Sends a wire message through the transport channel.
      *
-     * @param message - Wire message to send.
+     * @param message Wire message to send.
      * @returns Nothing.
      */
     abstract send(message: TyprWireMessage): void;
@@ -15,7 +15,7 @@ export abstract class AbstractTransport {
     /**
      * Subscribes to incoming wire messages.
      *
-     * @param handler - Handler called for each decoded message.
+     * @param handler Handler called for each decoded message.
      * @returns Nothing.
      */
     abstract onMessage(handler: (message: TyprWireMessage) => void): void;

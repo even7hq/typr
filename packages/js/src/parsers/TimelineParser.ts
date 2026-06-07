@@ -17,7 +17,7 @@ export class TimelineParser extends EventEmitter {
     /**
      * Feeds one NDJSON line into the parser.
      *
-     * @param line - Single line without trailing newline.
+     * @param line Single line without trailing newline.
      * @returns Nothing.
      */
     public pushLine(line: string): void {

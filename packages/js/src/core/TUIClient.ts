@@ -26,7 +26,7 @@ export class TUIClient {
     /**
      * Creates a client by resolving {@link RuntimeMode} and constructing the matching adapter.
      *
-     * @param settings - Optional overrides for mode, clack guide, and AUTO policy.
+     * @param settings Optional overrides for mode, clack guide, and AUTO policy.
      */
     constructor(settings: TUIClientSettings = {}) {
         const resolved = ModeResolver.resolve(settings);
@@ -62,7 +62,7 @@ export class TUIClient {
     /**
      * Builds a {@link ClackAdapter} and applies optional global clack settings.
      *
-     * @param settings - Client settings that may include `withGuide`.
+     * @param settings Client settings that may include `withGuide`.
      * @returns Configured clack backed adapter.
      */
     private static createClackAdapter(settings: TUIClientSettings): ClackAdapter {

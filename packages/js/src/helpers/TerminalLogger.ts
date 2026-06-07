@@ -27,7 +27,7 @@ export interface TerminalLoggerSpinner {
     /**
      * Starts the spinner with an optional initial message.
      *
-     * @param message - Initial spinner message shown while work is in progress
+     * @param message Initial spinner message shown while work is in progress
      * @returns Nothing.
      */
     start(message: string): void;
@@ -35,7 +35,7 @@ export interface TerminalLoggerSpinner {
     /**
      * Updates the spinner message while it is still running.
      *
-     * @param message - Updated message to display
+     * @param message Updated message to display
      * @returns Nothing.
      */
     message(message: string): void;
@@ -43,7 +43,7 @@ export interface TerminalLoggerSpinner {
     /**
      * Stops the spinner and shows a success message.
      *
-     * @param message - Final message displayed when the operation completes
+     * @param message Final message displayed when the operation completes
      * @returns Nothing.
      */
     stop(message: string): void;
@@ -51,7 +51,7 @@ export interface TerminalLoggerSpinner {
     /**
      * Stops the spinner and shows an error message.
      *
-     * @param message - Error message displayed when the operation fails
+     * @param message Error message displayed when the operation fails
      * @returns Nothing.
      */
     error(message: string): void;
@@ -70,8 +70,8 @@ export class TerminalLogger {
     /**
      * Creates a logger scoped to a context label (included in file sink lines when set).
      *
-     * @param context - Namespace for this logger (e.g. `git/pull`)
-     * @param options - Optional file sink and other hooks
+     * @param context Namespace for this logger (e.g. `git/pull`)
+     * @param options Optional file sink and other hooks
      * @returns New {@link TerminalLogger} instance
      */
     static create(context: string, options?: TerminalLoggerOptions): TerminalLogger {
@@ -81,7 +81,7 @@ export class TerminalLogger {
     /**
      * Sets global verbose mode (enables `debug()` output).
      *
-     * @param verbose - Whether verbose mode should be enabled globally
+     * @param verbose Whether verbose mode should be enabled globally
      * @returns Nothing.
      */
     static setVerbose(verbose: boolean): void {
@@ -100,7 +100,7 @@ export class TerminalLogger {
     /**
      * Increments or decrements raw mode (plain console instead of Typr symbols).
      *
-     * @param raw - Pass true to enter raw mode, false to leave it
+     * @param raw Pass true to enter raw mode, false to leave it
      * @returns Nothing.
      */
     static setRawMode(raw: boolean): void {
@@ -168,8 +168,8 @@ export class TerminalLogger {
     }
 
     /**
-     * @param context - Logger namespace
-     * @param options - Optional hooks
+     * @param context Logger namespace
+     * @param options Optional hooks
      */
     constructor(
         public readonly context: string,
@@ -179,8 +179,8 @@ export class TerminalLogger {
     /**
      * Logs an error message.
      *
-     * @param message - Error message or object
-     * @param args - Printf-style format arguments
+     * @param message Error message or object
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public error(message: string | unknown, ...args: unknown[]): void {
@@ -190,8 +190,8 @@ export class TerminalLogger {
     /**
      * Logs a warning message.
      *
-     * @param message - Warning message or object
-     * @param args - Printf-style format arguments
+     * @param message Warning message or object
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public warn(message: string | unknown, ...args: unknown[]): void {
@@ -201,8 +201,8 @@ export class TerminalLogger {
     /**
      * Logs an informational message.
      *
-     * @param message - Info message or object
-     * @param args - Printf-style format arguments
+     * @param message Info message or object
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public info(message: string | unknown, ...args: unknown[]): void {
@@ -212,8 +212,8 @@ export class TerminalLogger {
     /**
      * Logs a success message.
      *
-     * @param message - Success message or object
-     * @param args - Printf-style format arguments
+     * @param message Success message or object
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public success(message: string | unknown, ...args: unknown[]): void {
@@ -223,8 +223,8 @@ export class TerminalLogger {
     /**
      * Logs a debug message when global verbose mode is enabled.
      *
-     * @param message - Debug message or object
-     * @param args - Printf-style format arguments
+     * @param message Debug message or object
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public debug(message: string | unknown, ...args: unknown[]): void {
@@ -240,9 +240,9 @@ export class TerminalLogger {
     /**
      * Logs a message with a custom symbol prefix.
      *
-     * @param prefix - Symbol or emoji prefix
-     * @param message - Message to log
-     * @param args - Printf-style format arguments
+     * @param prefix Symbol or emoji prefix
+     * @param message Message to log
+     * @param args Printf-style format arguments
      * @returns Nothing.
      */
     public log(prefix: string, message: string | unknown, ...args: unknown[]): void {
@@ -262,8 +262,8 @@ export class TerminalLogger {
     /**
      * Formats a message with optional printf-style arguments.
      *
-     * @param message - Message string or object
-     * @param args - Printf-style arguments
+     * @param message Message string or object
+     * @param args Printf-style arguments
      * @returns Formatted string
      */
     public format(message: string | unknown, args: unknown[]): string {
@@ -279,10 +279,10 @@ export class TerminalLogger {
     }
 
     /**
-     * @param level - Log level for file sink tagging
-     * @param message - Message or object
-     * @param args - Format arguments
-     * @param write - Typr log writer for this level
+     * @param level Log level for file sink tagging
+     * @param message Message or object
+     * @param args Format arguments
+     * @param write Typr log writer for this level
      * @returns Nothing.
      */
     private emit(
@@ -303,8 +303,8 @@ export class TerminalLogger {
     }
 
     /**
-     * @param level - Log level
-     * @param formatted - Pre-formatted message body
+     * @param level Log level
+     * @param formatted Pre-formatted message body
      * @returns Nothing.
      */
     private writeRaw(level: TerminalLogLevel, formatted: string): void {
@@ -331,7 +331,7 @@ export class TerminalLogger {
     }
 
     /**
-     * @param formatted - Message body
+     * @param formatted Message body
      * @returns Line prefixed with context when set
      */
     private tagLine(formatted: string): string {
@@ -339,8 +339,8 @@ export class TerminalLogger {
     }
 
     /**
-     * @param format - Format string with placeholders
-     * @param args - Substitution values
+     * @param format Format string with placeholders
+     * @param args Substitution values
      * @returns Formatted string
      */
     private formatString(format: string, ...args: unknown[]): string {
