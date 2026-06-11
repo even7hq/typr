@@ -23,6 +23,7 @@
     "packages/docs"
   ],
   "scripts": {
+    "prepare": "node scripts/ensure-built.cjs",
     "build": "yarn workspace @typr/js-src build",
     "build:all": "yarn workspace @typr/js-src build && yarn workspace @typr/docs build",
     "lint": "yarn workspace @typr/js-src lint",
