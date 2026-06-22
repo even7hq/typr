@@ -248,6 +248,11 @@ export class TerminalLogger {
     public log(prefix: string, message: string | unknown, ...args: unknown[]): void {
         const formatted = this.format(message, args);
 
+        if (formatted === "") {
+            TerminalLogger.writeBlankLine();
+            return;
+        }
+
         if (TerminalLogger.getRawMode()) {
             for (const line of formatted.split("\n")) {
                 console.log(prefix + " " + line);
@@ -293,6 +298,11 @@ export class TerminalLogger {
     ): void {
         const formatted = this.format(message, args);
 
+        if (formatted === "") {
+            TerminalLogger.writeBlankLine();
+            return;
+        }
+
         if (TerminalLogger.getRawMode()) {
             this.writeRaw(level, formatted);
         } else {
@@ -300,6 +310,15 @@ export class TerminalLogger {
         }
 
         this.options.fileSink?.(level, this.tagLine(formatted));
+    }
+
+    /**
+     * Writes a plain newline without clack guide characters.
+     *
+     * @returns Nothing.
+     */
+    private static writeBlankLine(): void {
+        process.stdout.write("\n");
     }
 
     /**
