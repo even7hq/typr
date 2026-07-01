@@ -611,7 +611,7 @@ export class PinnedConsole {
      */
     private createHookedMethod(label: string, originalFn: (...args: any[]) => void): (...args: any[]) => void {
         return (...args: any[]) => {
-            if (!this.enabled) {
+            if (!this.enabled || label === "error") {
                 return originalFn(...args);
             }
 
