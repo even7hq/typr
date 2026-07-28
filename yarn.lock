@@ -646,8 +646,8 @@
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
 "@lemon/linting@git+https://github.com/even7hq/lemon-linting.git":
-  version "1.0.3"
-  resolved "git+https://github.com/even7hq/lemon-linting.git#740105d2b9f65e9fc634eca28c65fe199a471340"
+  version "1.0.4"
+  resolved "git+https://github.com/even7hq/lemon-linting.git#2672818fb11a4d7b108e7166ed1e4cbcbe251d3e"
   dependencies:
     "@eslint/js" "^9.39.4"
     "@rushstack/eslint-patch" "^1.16.1"
