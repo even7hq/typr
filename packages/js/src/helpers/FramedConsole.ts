@@ -149,6 +149,21 @@ export interface FramedConsoleSession {
      * @returns Nothing.
      */
     fail(message: string): void;
+
+    /**
+     * Stops using arrow/page keys for local scroll so they can be forwarded to a
+     * remote interactive prompt. Ctrl+C / Ctrl+D still interrupt the panel.
+     *
+     * @returns Nothing.
+     */
+    pauseKeyCapture(): void;
+
+    /**
+     * Restores local scroll key handling after {@link pauseKeyCapture}.
+     *
+     * @returns Nothing.
+     */
+    resumeKeyCapture(): void;
 }
 
 /**
@@ -611,6 +626,14 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
             }
 
             options.onReleaseTerminal?.();
+        },
+
+        pauseKeyCapture(): void {
+            // Plain logger never captures keys
+        },
+
+        resumeKeyCapture(): void {
+            // Plain logger never captures keys
         }
     };
 }
@@ -631,6 +654,8 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
     let keyListenerAttached = false;
     let sigintListenerAttached = false;
     let resizeListenerAttached = false;
+    /** When true, arrow/page keys are ignored so a remote prompt can own them. */
+    let keyCapturePaused = false;
 
     const overlayState = TerminalOverlay.createState();
     const interruptPolicy = options.interruptPolicy ?? "handoff";
@@ -852,6 +877,11 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             return;
         }
 
+        // Remote interactive prompts (migrate confirm, etc.) own navigation keys.
+        if (keyCapturePaused) {
+            return;
+        }
+
         const { innerHeight } = dimensions;
 
         if (s === "\x1b[A" || s === "k") {
@@ -1023,6 +1053,14 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             if (dump) {
                 clack.note(dump, options.failNoteTitle ?? "Output");
             }
+        },
+
+        pauseKeyCapture(): void {
+            keyCapturePaused = true;
+        },
+
+        resumeKeyCapture(): void {
+            keyCapturePaused = false;
         }
     };
 }
