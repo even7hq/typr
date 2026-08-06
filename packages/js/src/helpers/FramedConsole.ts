@@ -149,6 +149,16 @@ export interface FramedConsoleSession {
      * @returns Nothing.
      */
     fail(message: string): void;
+
+    /**
+     * Leaves the framed alt-screen and releases stdin so a remote interactive
+     * SSH/PTY session can own the real terminal (colors, arrow keys, prompts).
+     * Idempotent: later {@link stop}/{@link fail} become no-ops aside from a status line.
+     *
+     * @param message Optional status printed after leaving the panel.
+     * @returns Nothing.
+     */
+    handoffToRawTerminal(message?: string): void;
 }
 
 /**
@@ -611,6 +621,18 @@ function createPlainLoggerSession(options: FramedConsoleOptions): FramedConsoleS
             }
 
             options.onReleaseTerminal?.();
+        },
+
+        handoffToRawTerminal(message?: string): void {
+            if (message) {
+                if (options.plainLog?.onPhase) {
+                    options.plainLog.onPhase(message);
+                } else {
+                    clack.log.info(`[${title}] ${message}`);
+                }
+            }
+
+            options.onReleaseTerminal?.();
         }
     };
 }
@@ -963,6 +985,7 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
      */
     const finalize = (message: string): void => {
         if (closed) {
+            process.stdout.write(`${message}\n`);
             return;
         }
 
@@ -1023,6 +1046,30 @@ function createInteractiveSession(options: FramedConsoleOptions): FramedConsoleS
             if (dump) {
                 clack.note(dump, options.failNoteTitle ?? "Output");
             }
+        },
+
+        handoffToRawTerminal(message?: string): void {
+            if (closed) {
+                return;
+            }
+
+            closed = true;
+
+            if (renderTimer !== undefined) {
+                clearTimeout(renderTimer);
+                renderTimer = undefined;
+            }
+
+            detachKeys();
+            detachResize();
+            TerminalOverlay.leaveAltScreen(process.stdout);
+
+            if (message) {
+                process.stdout.write(`${message}\n`);
+            }
+
+            options.onReleaseTerminal?.();
+            releaseTerminal();
         }
     };
 }
