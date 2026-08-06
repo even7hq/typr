@@ -330,21 +330,26 @@ export class TerminalLogger {
         const lines = formatted.split("\n");
 
         for (const line of lines) {
+            if (line === "") {
+                TerminalLogger.writeBlankLine();
+                continue;
+            }
+
             switch (level) {
                 case "error":
-                    console.error(chalk.red("ERROR") + " " + line);
+                    console.error(chalk.red("■") + " " + line);
                     break;
                 case "warn":
-                    console.warn(chalk.yellow("WARN") + " " + line);
+                    console.warn(chalk.yellow("▲") + " " + line);
                     break;
                 case "success":
-                    console.log(chalk.green("SUCCESS") + " " + line);
+                    console.log(chalk.green("◆") + " " + line);
                     break;
                 case "debug":
-                    console.log(chalk.gray("DEBUG") + " " + line);
+                    console.log(chalk.dim("~") + " " + line);
                     break;
                 default:
-                    console.log(chalk.blue("INFO") + " " + line);
+                    console.log(chalk.cyan("●") + " " + line);
             }
         }
     }
