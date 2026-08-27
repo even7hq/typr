@@ -79,6 +79,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
             }
 
             this.pending.delete(response.id);
+            this.maybePauseReading();
             entry.resolve(response.result);
             return;
         }
@@ -92,7 +93,19 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
             }
 
             this.pending.delete(err.id);
+            this.maybePauseReading();
             entry.reject(new TyprWireRpcError(err.error.code, err.error.message, err.error.data));
+        }
+    }
+
+    /**
+     * Releases stdin when no RPC is waiting so CLI commands can exit after logging.
+     *
+     * @returns Nothing.
+     */
+    private maybePauseReading(): void {
+        if (this.pending.size === 0) {
+            this.transport.pauseReading();
         }
     }
 
@@ -134,6 +147,7 @@ export class NDJSONPromptAdapter extends AbstractAdapter {
             ts: new Date().toISOString()
         };
 
+        this.transport.startReading();
         this.transport.send(req);
 
         return await new Promise((resolve, reject) => {

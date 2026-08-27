@@ -49,7 +49,30 @@ export class NDJSONStdioTransport extends AbstractTransport {
      */
     public onMessage(handler: (message: TyprWireMessage) => void): void {
         this.handlers.push(handler);
+    }
+
+    /**
+     * Starts reading stdin for inbound RPC responses.
+     * Spinner/log events do not need this; attaching readline keeps Node alive.
+     *
+     * @returns Nothing.
+     */
+    public startReading(): void {
         this.ensureReader();
+    }
+
+    /**
+     * Closes the stdin readline so the process can exit when no RPC is pending.
+     *
+     * @returns Nothing.
+     */
+    public pauseReading(): void {
+        if (!this.readlineInterface) {
+            return;
+        }
+
+        this.readlineInterface.close();
+        this.readlineInterface = null;
     }
 
     /**
@@ -58,11 +81,7 @@ export class NDJSONStdioTransport extends AbstractTransport {
      * @returns Nothing.
      */
     public dispose(): void {
-        if (this.readlineInterface) {
-            this.readlineInterface.close();
-            this.readlineInterface = null;
-        }
-
+        this.pauseReading();
         this.handlers.length = 0;
     }
 
