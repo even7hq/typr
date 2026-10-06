@@ -42,6 +42,7 @@ export {
     type TerminalLoggerSpinner,
     type TerminalLogLevel
 } from "./helpers/TerminalLogger";
+export { PlainCliOutput } from "./helpers/PlainCliOutput";
 export { loadClack } from "./helpers/ClackLoader";
 export {
     PinnedConsole,

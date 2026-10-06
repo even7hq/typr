@@ -1,6 +1,15 @@
 import * as clack from "@clack/prompts";
 
+import { PlainCliOutput } from "../../helpers/PlainCliOutput";
+import { TerminalLogger } from "../../helpers/TerminalLogger";
 import { AbstractAdapter } from "../../models/AbstractAdapter";
+import {
+    AdapterLogFormatting,
+    eachStringChunk,
+    toClackStreamOptions,
+    type AdapterLogStreamOptions,
+    type TerminalAdapterLog
+} from "../../types/AdapterLog";
 import type {
     AutocompleteMultiselectPromptOptions,
     AutocompletePromptOptions,
@@ -24,13 +33,6 @@ import type {
     TaskRunnerItem,
     TextPromptOptions
 } from "../../types/ClackBackedOptions";
-import {
-    AdapterLogFormatting,
-    eachStringChunk,
-    toClackStreamOptions,
-    type AdapterLogStreamOptions,
-    type TerminalAdapterLog
-} from "../../types/AdapterLog";
 import type { TUITaskLogHandle, TUIProgress, TUISpinner } from "../../types/TUITypes";
 import { ClackPromptMapper, type SelectOptionLike } from "./ClackPromptMapper";
 
@@ -232,6 +234,23 @@ export class ClackAdapter extends AbstractAdapter {
      * @returns Spinner handle.
      */
     public spinner(opts?: SpinnerFactoryOptions): TUISpinner {
+        if (PlainCliOutput.isActive()) {
+            void opts;
+            const plain = TerminalLogger.spinner();
+
+            return {
+                start: (message?: string) => plain.start(message ?? ""),
+                message: (message?: string) => plain.message(message ?? ""),
+                stop: (message?: string) => plain.stop(message ?? ""),
+                cancel: (message?: string) => plain.stop(message ?? ""),
+                error: (message?: string) => plain.error(message ?? ""),
+                clear: () => {},
+                get isCancelled() {
+                    return false;
+                }
+            };
+        }
+
         const active = clack.spinner(opts);
 
         return {
