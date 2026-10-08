@@ -20,15 +20,16 @@
   ],
   "workspaces": [
     "packages/js",
-    "packages/docs"
+    "packages/docs",
+    "packages/logger"
   ],
   "scripts": {
     "prepare": "node scripts/ensure-built.cjs",
     "build": "yarn workspace @typr/js-src build",
-    "build:all": "yarn workspace @typr/js-src build && yarn workspace @typr/docs build",
+    "build:all": "yarn workspace @typr/js-src build && yarn workspace @typr/logger build && yarn workspace @typr/docs build",
     "lint": "yarn workspace @typr/js-src lint",
     "lint:fix": "yarn workspace @typr/js-src lint:fix",
-    "test": "yarn workspace @typr/js-src test",
+    "test": "yarn workspace @typr/js-src test && yarn workspace @typr/logger test && yarn workspace @typr/logger test:lua",
     "docs:watch": "yarn workspace @typr/docs watch",
     "docs:build": "yarn workspace @typr/docs build",
     "docs:preview": "yarn workspace @typr/docs preview"

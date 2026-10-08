@@ -39,6 +39,18 @@ export default defineConfig({
             { label: "AUTO policy", link: "/reference/auto-policy/" },
             { label: "npm package", link: "/reference/npm-package/" }
           ]
+        },
+        {
+          label: "Logger",
+          items: [
+            { label: "Overview", link: "/logger/" },
+            { label: "Sinks", link: "/logger/sinks/" },
+            { label: "Formats", link: "/logger/formats/" },
+            { label: "OTEL", link: "/logger/otel/" },
+            { label: "Routing", link: "/logger/routing/" },
+            { label: "Management", link: "/logger/management/" },
+            { label: "Lua", link: "/logger/lua/" }
+          ]
         }
       ]
     })

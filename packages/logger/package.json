@@ -1,0 +1,86 @@
+{
+  "name": "@typr/logger",
+  "version": "1.0.0",
+  "description": "Logging for Typr with optional OTEL and Lua modules.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/even7hq/typr.git",
+    "directory": "packages/logger"
+  },
+  "main": "./dist/js/index.js",
+  "types": "./dist/js/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/js/index.d.ts",
+      "import": "./dist/js/index.js",
+      "require": "./dist/js/index.js"
+    },
+    "./lua/*": "./src/lua/*"
+  },
+  "license": "UNLICENSED",
+  "files": [
+    "dist",
+    "src/lua"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src/js/ tests/js/",
+    "lint:fix": "eslint src/js/ tests/js/ --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:lua": "bash scripts/RunBusted.sh"
+  },
+  "dependencies": {
+    "triple-beam": "^1.4.1",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "winston-transport": "^4.9.0"
+  },
+  "peerDependencies": {
+    "@typr/js": "^1.0.0",
+    "@opentelemetry/api": "^1.0.0",
+    "@opentelemetry/api-logs": "^0.50.0",
+    "@opentelemetry/sdk-logs": "^0.50.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.50.0",
+    "@opentelemetry/resources": "^1.0.0",
+    "@opentelemetry/semantic-conventions": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@typr/js": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@opentelemetry/api-logs": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-logs": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-logs-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/resources": {
+      "optional": true
+    },
+    "@opentelemetry/semantic-conventions": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@lemon/linting": "git+https://github.com/even7hq/lemon-linting.git",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/core": "^1.30.0",
+    "@opentelemetry/api-logs": "^0.57.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.57.0",
+    "@opentelemetry/resources": "^1.30.0",
+    "@opentelemetry/sdk-logs": "^0.57.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0",
+    "@typr/js-src": "1.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "5.9.3",
+    "vitest": "^3.0.0"
+  }
+}

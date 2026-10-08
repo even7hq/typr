@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: yarn
+          cache-dependency-path: yarn.lock
+
+      - name: Install Lua and busted
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4 luarocks
+          sudo luarocks install busted
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint logger package
+        run: yarn workspace @typr/logger lint
+
+      - name: Build
+        run: yarn build:all
+
+      - name: Unit tests (JS)
+        run: yarn workspace @typr/js-src test && yarn workspace @typr/logger test
+
+      - name: Unit tests (Lua)
+        run: yarn workspace @typr/logger test:lua
