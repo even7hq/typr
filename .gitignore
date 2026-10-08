@@ -4,3 +4,8 @@ dist/
 .DS_Store
 .env
 .env.*
+
+# Local SQLite WAL default (OTEL log backlog); safe to share path with LM state.db in prod
+typr.db
+typr.db-shm
+typr.db-wal

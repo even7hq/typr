@@ -31,6 +31,7 @@
     "test:lua": "bash scripts/RunBusted.sh"
   },
   "dependencies": {
+    "better-sqlite3": "^11.10.0",
     "triple-beam": "^1.4.1",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0",
@@ -78,6 +79,7 @@
     "@opentelemetry/sdk-logs": "^0.57.0",
     "@opentelemetry/semantic-conventions": "^1.28.0",
     "@typr/js-src": "1.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.0.0",
     "eslint": "^9.0.0",
     "typescript": "5.9.3",

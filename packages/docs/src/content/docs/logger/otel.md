@@ -5,7 +5,7 @@ description: OTLP logs, env helpers, and circuit breaker.
 
 # OTEL
 
-`OtelSink` exports logs over OTLP HTTP `/v1/logs` using an internal `LoggerProvider` and `OtlpLogExportProcessor` (batch + circuit breaker).
+`OtelSink` exports logs over OTLP HTTP `/v1/logs` using an internal `LoggerProvider` and a batched OTLP processor with circuit breaker. By default, failed exports are persisted to a SQLite WAL (same idea as LuckyMaker `wal_entries`) and retried in the background.
 
 ## From env
 
@@ -33,6 +33,36 @@ Environment variables:
 | `OTEL_LOG_CIRCUIT_FAILURE_THRESHOLD` | Consecutive export failures before circuit opens (default 3) |
 | `OTEL_LOG_CIRCUIT_OPEN_MS` | How long the circuit stays open (default 30000) |
 | `OTEL_SERVICE_NAME` | `service.name` |
+| `OTEL_WAL_ENABLED` | SQLite WAL on failed export (default `true`) |
+| `OTEL_WAL_DB` | SQLite file path (default `process.cwd()/typr.db`; may be LM `state.db`) |
+
+## SQLite WAL
+
+When export fails or the circuit is open, log records are written to `wal_entries` in the configured SQLite file. A separate timer retries due rows until export succeeds or `maxAttempts` is reached.
+
+The SQLite file **can be shared** with LuckyMaker application state (`state.db`): same `wal_entries` table; OTLP log backlog uses stream `OTLP_LOGS`, separate from other streams LM stores in that DB. Standalone Typr apps may keep the default `typr.db`; when running inside LM, set `dbPath` or `OTEL_WAL_DB` to the state database path.
+
+```typescript
+// Same file as LuckyMaker state (shared wal_entries):
+new OtelSink({
+  endpoint: "http://collector:4318",
+  serviceName: "luckymaker",
+  wal: { dbPath: "/path/to/state.db" }
+});
+
+new OtelSink({
+  endpoint: "http://collector:4318",
+  serviceName: "my-service",
+  wal: {
+    dbPath: "/var/lib/myapp/otel-logs.db",
+    maxBacklogEntries: 10_000,
+    maxAttempts: 10,
+    backlogFlushIntervalMs: 30_000
+  }
+});
+```
+
+Set `wal: false` to use in-memory re-queue only (`OtlpLogExportProcessor`).
 
 ## extraHeaders
 

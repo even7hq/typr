@@ -1,4 +1,5 @@
 import type { OtelSinkOptions } from "../sinks/OtelSink";
+import type { LogWalOptions } from "./wal/LogWalConfig";
 
 /**
  * Telemetry options read from environment variables.
@@ -53,6 +54,27 @@ function parsePositiveInt(raw: string | undefined, defaultValue: number): number
     }
 
     return Math.floor(value);
+}
+
+/**
+ * Resolves SQLite WAL settings from env (`OTEL_WAL_*`).
+ * `OTEL_WAL_DB` may target LuckyMaker `state.db` (shared with other `wal_entries` streams).
+ *
+ * @param env Environment map.
+ * @returns WAL options, or `false` when persistence is disabled.
+ */
+export function resolveLogWalFromEnv(env: NodeJS.ProcessEnv = process.env): LogWalOptions | false {
+    if (!parseBool(env.OTEL_WAL_ENABLED, true)) {
+        return false;
+    }
+
+    const dbPath = env.OTEL_WAL_DB?.trim();
+
+    if (dbPath && dbPath !== "") {
+        return { dbPath };
+    }
+
+    return {};
 }
 
 /**
@@ -152,6 +174,7 @@ export function buildOtelSinkOptionsFromEnv(env: NodeJS.ProcessEnv = process.env
         circuitBreaker: {
             failureThreshold: config.circuitFailureThreshold,
             openDurationMs: config.circuitOpenMs
-        }
+        },
+        wal: resolveLogWalFromEnv(env)
     };
 }

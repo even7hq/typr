@@ -1,15 +1,16 @@
 import { SeverityNumber, type Logger as OtelApiLogger } from "@opentelemetry/api-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { Resource } from "@opentelemetry/resources";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
+import { LoggerProvider, type LogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import Transport from "winston-transport";
 
 import type { LogSink, SinkBuildContext, SinkCategory } from "../LoggerTypes";
+import { createOtlpLogRecordProcessor } from "../otel/CreateOtlpLogRecordProcessor";
 import type { OtelCircuitBreakerOptions } from "../otel/OtelCircuitBreakerOptions";
 import { OtlpHeaders } from "../otel/OtlpHeaders";
-import { OtlpLogExportProcessor } from "../otel/OtlpLogExportProcessor";
 import { formatWinstonLogBody, isWinstonAttributeKey } from "../otel/WinstonLogMessageFormat";
+import type { LogWalOptions } from "../otel/wal/LogWalConfig";
 
 /**
  * Options for {@link OtelSink}.
@@ -24,6 +25,12 @@ export interface OtelSinkOptions {
     maxPendingRecords?: number;
     batchSize?: number;
     circuitBreaker?: OtelCircuitBreakerOptions;
+    /**
+     * SQLite WAL for failed OTLP exports. Default: enabled at `process.cwd()/typr.db`.
+     * Pass `{ dbPath: '...' }` to override (including LM `state.db` - same `wal_entries` table),
+     * or `false` to disable persistence.
+     */
+    wal?: LogWalOptions | false;
 }
 
 /**
@@ -34,7 +41,7 @@ export class OtelSink implements LogSink {
 
     private readonly options: OtelSinkOptions;
     private provider: LoggerProvider | null = null;
-    private processor: OtlpLogExportProcessor | null = null;
+    private processor: LogRecordProcessor | null = null;
     private otelLogger: OtelApiLogger | null = null;
     private transport: Transport | null = null;
 
@@ -68,11 +75,12 @@ export class OtelSink implements LogSink {
         });
 
         this.provider = new LoggerProvider({ resource });
-        this.processor = new OtlpLogExportProcessor(exporter, {
+        this.processor = createOtlpLogRecordProcessor(exporter, {
             flushIntervalMs: this.options.flushIntervalMs ?? 1000,
             maxPendingRecords: this.options.maxPendingRecords,
             batchSize: this.options.batchSize,
-            circuitBreaker: this.options.circuitBreaker
+            circuitBreaker: this.options.circuitBreaker,
+            wal: this.options.wal
         });
 
         this.provider.addLogRecordProcessor(this.processor);

@@ -59,11 +59,30 @@ export {
 
 export { OtlpHeaders } from "./otel/OtlpHeaders";
 export type { OtelCircuitBreakerOptions } from "./otel/OtelCircuitBreakerOptions";
+export {
+    createOtlpLogRecordProcessor,
+    type CreateOtlpLogRecordProcessorOptions
+} from "./otel/CreateOtlpLogRecordProcessor";
 export { OtlpLogExportProcessor, type OtlpLogExportProcessorOptions } from "./otel/OtlpLogExportProcessor";
+export {
+    OtlpLogWalExportProcessor,
+    type OtlpLogWalExportProcessorOptions
+} from "./otel/wal/OtlpLogWalExportProcessor";
+export {
+    DEFAULT_LOG_WAL_DB_FILE,
+    DEFAULT_MAX_BACKLOG_ENTRIES,
+    resolveDefaultLogWalDbPath,
+    resolveLogWalOptions,
+    type LogWalOptions,
+    type ResolvedLogWalOptions
+} from "./otel/wal/LogWalConfig";
+export { LogWalStream } from "./otel/wal/LogWalStream";
+export { LogWalDatabase, type LogWalEntryRow } from "./otel/wal/LogWalDatabase";
 export {
     buildOtelSinkOptionsFromEnv,
     isOtelLogsExportEnabled,
     readTelemetryConfig,
+    resolveLogWalFromEnv,
     resolveTelemetryServiceName,
     type TelemetryEnvConfig
 } from "./otel/TelemetryConfig";
