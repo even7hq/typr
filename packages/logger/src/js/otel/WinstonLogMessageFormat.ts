@@ -1,5 +1,7 @@
 import util from "util";
 
+import { LOGGER_LABELS_SYMBOL } from "../LoggerStaticLabels";
+
 const WINSTON_SPLAT = Symbol.for("splat");
 
 const WINSTON_RESERVED_KEYS = new Set([
@@ -40,7 +42,15 @@ export function formatWinstonLogBody(info: Record<string, unknown>): string {
  * @returns True when the key is safe to export as an attribute.
  */
 export function isWinstonAttributeKey(key: string): boolean {
-    return !WINSTON_RESERVED_KEYS.has(key);
+    if (WINSTON_RESERVED_KEYS.has(key)) {
+        return false;
+    }
+
+    if (key === String(LOGGER_LABELS_SYMBOL)) {
+        return false;
+    }
+
+    return true;
 }
 
 /**

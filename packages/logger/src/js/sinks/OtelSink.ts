@@ -9,7 +9,8 @@ import type { LogSink, SinkBuildContext, SinkCategory } from "../LoggerTypes";
 import { createOtlpLogRecordProcessor } from "../otel/CreateOtlpLogRecordProcessor";
 import type { OtelCircuitBreakerOptions } from "../otel/OtelCircuitBreakerOptions";
 import { OtlpHeaders } from "../otel/OtlpHeaders";
-import { formatWinstonLogBody, isWinstonAttributeKey } from "../otel/WinstonLogMessageFormat";
+import { buildOtelLogAttributes } from "../otel/OtelLogAttributes";
+import { formatWinstonLogBody } from "../otel/WinstonLogMessageFormat";
 import type { LogWalOptions } from "../otel/wal/LogWalConfig";
 
 /**
@@ -58,7 +59,8 @@ export class OtelSink implements LogSink {
      * @param _context Sink build context (unused).
      * @returns OTel Winston transport.
      */
-    createTransports(_context: SinkBuildContext): Transport[] {
+    createTransports(context: SinkBuildContext): Transport[] {
+        const loggerLabel = context.label;
         const headers = OtlpHeaders.build(this.options.bearerToken, this.options.extraHeaders);
         const endpoint = this.options.endpoint.replace(/\/+$/, "");
 
@@ -94,19 +96,7 @@ export class OtelSink implements LogSink {
 
                 try {
                     const level = typeof info.level === "string" ? info.level : "info";
-                    const attributes: Record<string, string | number | boolean> = {};
-
-                    for (const key of Object.keys(info)) {
-                        if (!isWinstonAttributeKey(key)) {
-                            continue;
-                        }
-
-                        const value = info[key];
-
-                        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-                            attributes[key] = value;
-                        }
-                    }
+                    const attributes = buildOtelLogAttributes(loggerLabel, info);
 
                     otelLogger.emit({
                         severityNumber: mapLevelToSeverityNumber(level),

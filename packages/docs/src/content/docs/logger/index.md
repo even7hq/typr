@@ -23,7 +23,12 @@ Optional peers:
 ```typescript
 import { Logger } from "@typr/logger";
 
-const logger = Logger.create("MyService");
+const logger = Logger.create("MyService", {
+  labels: {
+    product: "my-app",
+    module: "worker"
+  }
+});
 
 logger.info("started job %d", 42);
 logger.error("failed: %O", new Error("boom"));

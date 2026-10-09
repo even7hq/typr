@@ -64,6 +64,23 @@ new OtelSink({
 
 Set `wal: false` to use in-memory re-queue only (`OtlpLogExportProcessor`).
 
+## Logger labels (Loki / OTEL)
+
+Pass `labels` in `Logger.create`. They are attached to every emit as OTLP log attributes (Loki picks them up when logs are ingested via OTLP). The logger name is always exported as `log.logger`.
+
+```typescript
+const logger = Logger.create("storefront/cart", {
+  labels: {
+    product: "luckymaker",
+    module: "storefront"
+  }
+});
+
+logger.loki().info("checkout step %s", step);
+```
+
+`child()` loggers inherit the same label map.
+
 ## extraHeaders
 
 Pass any OTLP headers (for example `x-even-product`):

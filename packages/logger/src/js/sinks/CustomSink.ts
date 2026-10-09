@@ -1,5 +1,6 @@
 import Transport from "winston-transport";
 
+import { LoggerStaticLabels } from "../LoggerStaticLabels";
 import type { LogRecord, LogSink, SinkBuildContext, SinkCategory } from "../LoggerTypes";
 
 /**
@@ -46,6 +47,7 @@ export class CustomSink implements LogSink {
                     level: String(info.level ?? "info"),
                     message: String(info.message ?? ""),
                     label: context.label,
+                    labels: LoggerStaticLabels.readFromInfo(info),
                     timestamp: typeof info.timestamp === "string" ? info.timestamp : undefined,
                     meta: { ...info }
                 };

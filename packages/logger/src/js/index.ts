@@ -1,4 +1,5 @@
 export { Logger } from "./Logger";
+export { LoggerStaticLabels, type LoggerLabels } from "./LoggerStaticLabels";
 export { LoggerLokiRouting } from "./LoggerLokiRouting";
 export { LoggerSidecar } from "./LoggerSidecar";
 export {
@@ -87,4 +88,5 @@ export {
     type TelemetryEnvConfig
 } from "./otel/TelemetryConfig";
 export { enableOtelFromEnv } from "./otel/EnableOtelFromEnv";
+export { buildOtelLogAttributes } from "./otel/OtelLogAttributes";
 export { formatWinstonLogBody, isWinstonAttributeKey } from "./otel/WinstonLogMessageFormat";

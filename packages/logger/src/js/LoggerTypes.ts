@@ -2,6 +2,7 @@ import type winston from "winston";
 
 import type { RedactorPackSelection } from "./formats/redaction/packs/RedactorPackSelection";
 import type { SecretRedactor } from "./formats/redaction/SecretRedactor";
+import type { LoggerLabels } from "./LoggerStaticLabels";
 
 /**
  * Supported log levels for Typr loggers.
@@ -29,6 +30,8 @@ export interface LogRecord {
     message: string;
     label: string;
     timestamp?: string;
+    /** Static labels from {@link LoggerOptions.labels} (also on OTEL/Loki). */
+    labels: LoggerLabels;
     meta: Record<string, unknown>;
 }
 
@@ -37,6 +40,8 @@ export interface LogRecord {
  */
 export interface SinkBuildContext {
     label: string;
+    /** Static labels for remote sinks (OTEL / Loki via OTLP). */
+    labels: LoggerLabels;
     consoleFormat: winston.Logform.Format;
     fileFormat: winston.Logform.Format;
 }
@@ -114,6 +119,10 @@ export interface LoggerOptions {
     level?: LogLevel;
     sinks?: LogSink[];
     nodeId?: string;
+    /**
+     * Static key/value labels exported on every log line to OTEL (and Loki when ingested via OTLP).
+     */
+    labels?: LoggerLabels;
     redaction?: RedactionOptions;
     format?: winston.Logform.Format;
 }
@@ -133,6 +142,7 @@ export interface TransportDescriptor {
  */
 export interface LoggerInstanceIntrospection {
     label: string;
+    labels: LoggerLabels;
     level: string;
     callCount: number;
     muted: boolean;
@@ -169,6 +179,8 @@ export interface SidecarLogger {
  */
 export interface TyprLogger extends Omit<winston.Logger, "child"> {
     label: string;
+    /** Static labels copied to OTEL/Loki on every emit. */
+    labels: LoggerLabels;
     child(childLabel: string): TyprLogger;
     loki(enabled?: boolean): SidecarLogger;
     console(show?: boolean): SidecarLogger;

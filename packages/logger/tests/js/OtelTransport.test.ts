@@ -11,6 +11,7 @@ describe("OtelSink", () => {
 
         const transports = sink.createTransports({
             label: "otel-test",
+            labels: { team: "platform" },
             consoleFormat: {} as never,
             fileFormat: {} as never
         });

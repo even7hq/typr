@@ -8,6 +8,7 @@ import { SecretRedaction } from "./formats/SecretRedaction";
 import { DEFAULT_LOG_LEVEL, isValidLogLevel } from "./LoggerLevels";
 import { LoggerLokiRouting } from "./LoggerLokiRouting";
 import { LoggerSidecar } from "./LoggerSidecar";
+import { LoggerStaticLabels } from "./LoggerStaticLabels";
 import type {
     LogLevel,
     LoggerInstanceIntrospection,
@@ -53,6 +54,7 @@ export namespace Logger {
         }
 
         const redactionProfile = RedactionProfile.resolve(options.redaction);
+        const staticLabels = LoggerStaticLabels.normalize(options.labels);
 
         const sinks = [...(options.sinks ?? [new ConsoleSink()]), ...globalSinks];
         const hasRemote = sinks.some((sink) => sink.category === "remote");
@@ -90,6 +92,7 @@ export namespace Logger {
         for (const sink of sinks) {
             const built = sink.createTransports({
                 label,
+                labels: staticLabels,
                 consoleFormat,
                 fileFormat
             });
@@ -107,10 +110,12 @@ export namespace Logger {
             level,
             levels: winston.config.npm.levels,
             format: coreFormat,
+            defaultMeta: LoggerStaticLabels.defaultMeta(staticLabels),
             transports
         }) as TyprLogger;
 
         instance.label = label;
+        instance.labels = staticLabels;
         applyLoggerMaxListeners(instance, transports.length);
 
         attachInstanceMethods(instance, label);
@@ -304,6 +309,7 @@ export namespace Logger {
 
             loggers.push({
                 label,
+                labels: entry.instance.labels ?? {},
                 level: entry.instance.level,
                 callCount: entry.callCount,
                 muted: mutedLoggers.has(label),
@@ -355,9 +361,15 @@ function attachInstanceMethods(instance: TyprLogger, label: string): void {
     ).bind(instance);
 
     instance.child = (childLabel: string): TyprLogger => {
-        const child = winstonChild({ label: childLabel }) as TyprLogger;
+        const parentLabels = instance.labels ?? {};
+        const childDefaultMeta = LoggerStaticLabels.defaultMeta(parentLabels) ?? {};
+        const child = winstonChild({
+            label: childLabel,
+            ...childDefaultMeta
+        }) as TyprLogger;
 
         child.label = `${label}:${childLabel}`;
+        child.labels = parentLabels;
         attachInstanceMethods(child, child.label);
         patchTransportMuteBehavior(child);
 
