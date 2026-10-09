@@ -18,12 +18,16 @@ import type {
     TransportDescriptor,
     TyprLogger
 } from "./LoggerTypes";
+import type { LoggerLabels } from "./LoggerStaticLabels";
 import { ConsoleSink } from "./sinks/ConsoleSink";
 
 interface RegistryEntry {
     instance: TyprLogger;
     callCount: number;
     sinks: LogSink[];
+    consoleFormat: winston.Logform.Format;
+    fileFormat: winston.Logform.Format;
+    staticLabels: LoggerLabels;
 }
 
 const registry = new Map<string, RegistryEntry>();
@@ -31,6 +35,7 @@ const mutedLoggers = new Set<string>();
 const labelLevelOverrides = new Map<string, LogLevel>();
 const globalSinks: LogSink[] = [];
 const sinkCategories = new WeakMap<winston.transport, "local" | "remote">();
+const globalSinkTransportsByLabel = new Map<LogSink, Map<string, winston.transport[]>>();
 
 let globalLogLevel: LogLevel = DEFAULT_LOG_LEVEL;
 
@@ -87,22 +92,12 @@ export namespace Logger {
         const consoleFormat = options.format ?? LogLine.generateConsoleFormat([], printfConsole);
         const fileFormat = LogLine.generateFileFormat([], printfFile);
 
-        const transports: winston.transport[] = [];
-
-        for (const sink of sinks) {
-            const built = sink.createTransports({
-                label,
-                labels: staticLabels,
-                consoleFormat,
-                fileFormat
-            });
-
-            for (const transport of built) {
-                LoggerLokiRouting.wrapTransportForLokiRouteFilter(transport, sink.category);
-                sinkCategories.set(transport, sink.category);
-                transports.push(transport);
-            }
-        }
+        const transports = buildTransportsForSinks(sinks, {
+            label,
+            labels: staticLabels,
+            consoleFormat,
+            fileFormat
+        });
 
         const level = labelLevelOverrides.get(label) ?? options.level ?? globalLogLevel;
 
@@ -123,7 +118,10 @@ export namespace Logger {
         registry.set(label, {
             instance,
             callCount: 1,
-            sinks
+            sinks,
+            consoleFormat,
+            fileFormat,
+            staticLabels
         });
 
         patchTransportMuteBehavior(instance);
@@ -138,7 +136,12 @@ export namespace Logger {
      * @returns Nothing.
      */
     export function addGlobalSink(sink: LogSink): void {
+        if (globalSinks.includes(sink)) {
+            return;
+        }
+
         globalSinks.push(sink);
+        attachGlobalSinkToRegistry(sink);
     }
 
     /**
@@ -153,6 +156,8 @@ export namespace Logger {
         if (index >= 0) {
             globalSinks.splice(index, 1);
         }
+
+        detachGlobalSinkFromRegistry(sink);
     }
 
     /**
@@ -342,6 +347,102 @@ export namespace Logger {
         for (const sink of globalSinks) {
             await sink.shutdown();
         }
+    }
+}
+
+/**
+ * Builds Winston transports for the given sinks and routing context.
+ *
+ * @param sinks Sink list.
+ * @param context Label, labels, and format pipelines.
+ * @returns Winston transports ready to attach.
+ */
+function buildTransportsForSinks(
+    sinks: LogSink[],
+    context: {
+        label: string;
+        labels: LoggerLabels;
+        consoleFormat: winston.Logform.Format;
+        fileFormat: winston.Logform.Format;
+    }
+): winston.transport[] {
+    const transports: winston.transport[] = [];
+
+    for (const sink of sinks) {
+        const built = sink.createTransports(context);
+
+        for (const transport of built) {
+            LoggerLokiRouting.wrapTransportForLokiRouteFilter(transport, sink.category);
+            sinkCategories.set(transport, sink.category);
+            transports.push(transport);
+        }
+    }
+
+    return transports;
+}
+
+/**
+ * Attaches a global sink to every logger already in the registry.
+ *
+ * @param sink Global sink instance.
+ * @returns Nothing.
+ */
+function attachGlobalSinkToRegistry(sink: LogSink): void {
+    for (const [label, entry] of registry.entries()) {
+        if (entry.sinks.includes(sink)) {
+            continue;
+        }
+
+        const built = buildTransportsForSinks([sink], {
+            label,
+            labels: entry.staticLabels,
+            consoleFormat: entry.consoleFormat,
+            fileFormat: entry.fileFormat
+        });
+
+        for (const transport of built) {
+            entry.instance.add(transport);
+            patchTransportMuteBehavior(entry.instance);
+        }
+
+        let byLabel = globalSinkTransportsByLabel.get(sink);
+
+        if (!byLabel) {
+            byLabel = new Map();
+            globalSinkTransportsByLabel.set(sink, byLabel);
+        }
+
+        byLabel.set(label, built);
+
+        entry.sinks.push(sink);
+        applyLoggerMaxListeners(entry.instance, entry.instance.transports.length);
+    }
+}
+
+/**
+ * Detaches a global sink from registered loggers.
+ *
+ * @param sink Global sink instance.
+ * @returns Nothing.
+ */
+function detachGlobalSinkFromRegistry(sink: LogSink): void {
+    for (const [label, entry] of registry.entries()) {
+        const sinkIndex = entry.sinks.indexOf(sink);
+
+        if (sinkIndex < 0) {
+            continue;
+        }
+
+        entry.sinks.splice(sinkIndex, 1);
+
+        const byLabel = globalSinkTransportsByLabel.get(sink);
+        const attached = byLabel?.get(label) ?? [];
+
+        for (const transport of attached) {
+            entry.instance.remove(transport);
+        }
+
+        byLabel?.delete(label);
     }
 }
 
