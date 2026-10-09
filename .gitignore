@@ -9,3 +9,6 @@ dist/
 typr.db
 typr.db-shm
 typr.db-wal
+**/typr.db
+**/typr.db-shm
+**/typr.db-wal
